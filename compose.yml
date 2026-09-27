@@ -1,0 +1,12 @@
+services:
+  app:
+    build:
+      context: .
+    ports:
+      - "5000:5000"
+    volumes:
+      - ./instance/database:/app/database
+    environment:
+      FLASK_APP: __init__.py
+      FLASK_DEBUG: "1"
+      DATABASE_URL: sqlite:////app/database/app.db
