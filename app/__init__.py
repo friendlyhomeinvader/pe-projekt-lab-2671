@@ -39,4 +39,9 @@ def create_app():
 
     register_api(app)
 
+    @app.spec_processor
+    def hide_non_api_paths(spec):
+        spec["paths"] = {path: item for path, item in spec["paths"].items() if path.startswith("/api/")}
+        return spec
+
     return app
