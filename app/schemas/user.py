@@ -8,7 +8,9 @@ class UserIn(Schema):
     display_name = fields.String(required=True, validate=validators.Length(max=256))
     email = fields.Email(required=True, validate=validators.Length(max=256))
     role = fields.String(required=True, validate=validators.OneOf(USER_ROLES))
-    password = fields.String(required=True, load_only=True, validate=validators.Length(min=8))
+    password = fields.String(
+        required=True, load_only=True, validate=validators.Length(min=8)
+    )
 
 
 class UserOut(Schema):

@@ -15,16 +15,18 @@ migrate = Migrate()
 
 
 def create_app():
-    app = APIFlask(__name__, instance_relative_config=True, title="Keymaster API", version="0.1.0")
+    app = APIFlask(
+        __name__, instance_relative_config=True, title="Keymaster API", version="0.1.0"
+    )
 
-    app.config["SQLALCHEMY_DATABASE_URI"] = os.environ.get("DATABASE_URL", "sqlite:///database/app.db")
+    app.config["SQLALCHEMY_DATABASE_URI"] = os.environ.get(
+        "DATABASE_URL", "sqlite:///database/app.db"
+    )
 
     db.init_app(app)
     migrate.init_app(app, db)
 
-    from app import models
     from app.api import register_api
-
 
     @app.get("/health")
     def check_health():
