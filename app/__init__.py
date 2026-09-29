@@ -27,6 +27,7 @@ def create_app():
     migrate.init_app(app, db)
 
     from app.api import register_api
+    from app.routes import register_routes
 
     @app.get("/health")
     def check_health():
@@ -38,10 +39,15 @@ def create_app():
         return {"database-status": "ok", "tables": tables}
 
     register_api(app)
+    register_routes(app)
 
     @app.spec_processor
     def hide_non_api_paths(spec):
-        spec["paths"] = {path: item for path, item in spec["paths"].items() if path.startswith("/api/")}
+        spec["paths"] = {
+            path: item
+            for path, item in spec["paths"].items()
+            if path.startswith("/api/")
+        }
         return spec
 
     return app
