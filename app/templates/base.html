@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Keymaster{% endblock %}</title>
+    <script src="https://unpkg.com/htmx.org@latest"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="flex h-screen w-screen overflow-hidden bg-gray-100">
+    <aside class="flex w-64 shrink-0 flex-col bg-gray-900 text-gray-100">
+        <div class="px-4 py-5 text-xl font-semibold border-b border-gray-800">
+            Keymaster
+        </div>
+
+        <nav class="flex-1 overflow-y-auto px-2 py-4 space-y-1">
+            {% for item in nav_items %}
+            <button
+                type="button"
+                hx-get="/fragments/{{ item.slug }}"
+                hx-target="#main-content"
+                hx-swap="innerHTML"
+                class="w-full text-left px-3 py-2 rounded-md text-sm font-medium text-gray-200 hover:bg-gray-800 hover:text-white"
+            >
+                {{ item.label }}
+            </button>
+            {% endfor %}
+        </nav>
+
+        <div class="border-t border-gray-800 px-4 py-3 flex items-center gap-3">
+            <div class="h-8 w-8 rounded-full bg-gray-600 flex items-center justify-center text-sm font-semibold">
+                ?
+            </div>
+            <span class="text-sm text-gray-300">Guest</span>
+        </div>
+    </aside>
+
+    <main id="main-content" class="flex-1 overflow-y-auto p-6">
+        {% block content %}{% endblock %}
+    </main>
+</body>
+</html>

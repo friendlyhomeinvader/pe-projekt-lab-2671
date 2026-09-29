@@ -1,5 +1,6 @@
-from app import db
 from werkzeug.security import check_password_hash, generate_password_hash
+
+from app import db
 
 USER_ROLES = ("REQUESTER", "OPERATOR", "ADMIN", "AUDITOR")
 USER_IDENTIFICATION_METHODS = ("PIN", "CARD", "SIGNATURE")

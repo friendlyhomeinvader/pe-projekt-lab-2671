@@ -2,9 +2,14 @@ from apiflask import APIBlueprint, EmptySchema, abort
 from sqlalchemy.exc import IntegrityError
 
 from app import db
-
-from app.schemas.user import UserOut, UserIn
-from app.services.user import list_users, create_user, get_user, update_user, delete_user
+from app.schemas.user import UserIn, UserOut
+from app.services.user import (
+    create_user,
+    delete_user,
+    get_user,
+    list_users,
+    update_user,
+)
 
 users_blp = APIBlueprint("users", __name__, url_prefix="/api/users", tag="Users")
 
