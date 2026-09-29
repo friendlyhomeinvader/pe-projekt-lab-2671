@@ -21,9 +21,9 @@ class IssueTicket(db.Model):
 
     room = db.relationship("Room", back_populates="issue_tickets")
     key = db.relationship("Key", back_populates="issue_tickets")
-    reported_by = db.relationship("User", foreign_keys="reported_by_id")
-    operator = db.relationship("User", foreign_keys="operator_id")
-    resolved_by = db.relationship("User", foreign_keys="resolved_by_id")
+    reported_by = db.relationship("User", foreign_keys="IssueTicket.reported_by_id")
+    operator = db.relationship("User", foreign_keys="IssueTicket.operator_id")
+    resolved_by = db.relationship("User", foreign_keys="IssueTicket.resolved_by_id")
 
     __table_args__ = (
         db.CheckConstraint(
