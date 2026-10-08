@@ -165,8 +165,7 @@ def required_field_params(contracts):
             if schema_field.required:
                 params.append(
                     pytest.param(
-                        contract, field_name, id=f"{
-                            contract.name}-{field_name}"
+                        contract, field_name, id=f"{contract.name}-{field_name}"
                     )
                 )
     return params
@@ -193,8 +192,7 @@ def unique_field_params(contracts):
     for contract in contracts:
         for field_name in contract.unique_fields:
             params.append(
-                pytest.param(contract, field_name, id=f"{
-                             contract.name}-{field_name}")
+                pytest.param(contract, field_name, id=f"{contract.name}-{field_name}")
             )
     return params
 
