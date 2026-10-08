@@ -1,3 +1,4 @@
+from flask_login import UserMixin
 from werkzeug.security import check_password_hash, generate_password_hash
 
 from app import db
@@ -6,7 +7,7 @@ USER_ROLES = ("REQUESTER", "OPERATOR", "ADMIN", "AUDITOR")
 USER_IDENTIFICATION_METHODS = ("PIN", "CARD", "SIGNATURE")
 
 
-class User(db.Model):
+class User(UserMixin, db.Model):
     __tablename__ = "user"
     id = db.Column(db.Integer, primary_key=True)
 
