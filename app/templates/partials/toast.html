@@ -1,0 +1,26 @@
+{% set toast_styles = {
+    "success": "bg-green-600 text-white",
+    "info": "bg-blue-600 text-white",
+    "warning": "bg-yellow-500 text-black",
+    "error": "bg-red-600 text-white",
+} %}
+<div
+    data-toast
+    hx-swap-oob="beforeend:#toast-container"
+    hx-trigger="load delay:5s"
+    hx-get="/toast/dismiss"
+    hx-target="this"
+    hx-swap="outerHTML"
+    class="flex items-center gap-3 rounded-md shadow-lg px-4 py-3 text-sm {{ toast_styles[level] }}"
+>
+    <span>{{ message }}</span>
+    <button
+        type="button"
+        hx-get="/toast/dismiss"
+        hx-target="closest [data-toast]"
+        hx-swap="outerHTML"
+        class="ml-auto text-lg leading-none opacity-80 hover:opacity-100"
+    >
+        &times;
+    </button>
+</div>

@@ -1,0 +1,59 @@
+<div>
+    <div class="flex items-center justify-between mb-4">
+        <h2 class="text-xl font-semibold text-gray-800">User Management</h2>
+        <label
+            for="modal-toggle"
+            hx-get="/users/new"
+            hx-target="#modal-content"
+            class="cursor-pointer inline-block bg-blue-600 text-white text-sm font-medium px-3 py-2 rounded-md hover:bg-blue-700"
+        >
+            + New User
+        </label>
+    </div>
+
+    <table class="w-full text-sm text-left bg-white rounded-md shadow overflow-hidden">
+        <thead class="bg-gray-100 text-gray-600 uppercase text-xs">
+            <tr>
+                <th class="px-4 py-2">ID</th>
+                <th class="px-4 py-2">Username</th>
+                <th class="px-4 py-2">Display Name</th>
+                <th class="px-4 py-2">Email</th>
+                <th class="px-4 py-2">Role</th>
+                <th class="px-4 py-2"></th>
+            </tr>
+        </thead>
+        <tbody class="divide-y divide-gray-100">
+            {% for user in users %}
+            <tr>
+                <td class="px-4 py-2">{{ user.id }}</td>
+                <td class="px-4 py-2">{{ user.username }}</td>
+                <td class="px-4 py-2">{{ user.display_name }}</td>
+                <td class="px-4 py-2">{{ user.email }}</td>
+                <td class="px-4 py-2">{{ user.role }}</td>
+                <td class="px-4 py-2 text-right space-x-2">
+                    <label
+                        for="modal-toggle"
+                        hx-get="/users/{{ user.id }}/edit"
+                        hx-target="#modal-content"
+                        class="cursor-pointer text-blue-600 hover:underline"
+                    >
+                        Edit
+                    </label>
+                    <label
+                        for="modal-toggle"
+                        hx-get="/users/{{ user.id }}/delete/confirm"
+                        hx-target="#modal-content"
+                        class="cursor-pointer text-red-600 hover:underline"
+                    >
+                        Delete
+                    </label>
+                </td>
+            </tr>
+            {% else %}
+            <tr>
+                <td class="px-4 py-2 text-gray-500" colspan="6">No users yet.</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>

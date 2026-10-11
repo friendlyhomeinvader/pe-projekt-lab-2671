@@ -34,6 +34,7 @@ def create_app():
     from app.api import register_api
     from app.models.user import User
     from app.routes import register_routes
+    from app.seed import register_seed_command
 
     @login_manager.user_loader
     def load_user(user_id):
@@ -50,6 +51,7 @@ def create_app():
 
     register_api(app)
     register_routes(app)
+    register_seed_command(app)
 
     @app.spec_processor
     def hide_non_api_paths(spec):
