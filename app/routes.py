@@ -9,6 +9,7 @@ from app.schemas.user import UserIn
 from app.services.auth import authenticate, role_required
 from app.services.nav import can_access_module, find_nav_item, visible_nav_items
 from app.services.notify import render_toast
+from app.services.preferences import is_installed, mark_installed
 from app.services.user import (
     create_user,
     delete_user,
@@ -47,6 +48,44 @@ def _html_error_handler(template_name, status):
 
 
 def register_routes(app):
+    @app.before_request
+    def _require_install():
+        if request.path.startswith("/api/"):
+            return None
+        if request.endpoint in (
+            "install",
+            "install_create",
+            "static",
+            "check_health",
+            "db_health",
+        ):
+            return None
+        if not is_installed():
+            return redirect(url_for("install"))
+
+    @app.get("/install")
+    def install():
+        if is_installed():
+            return redirect(url_for("dashboard"))
+        return render_template("install.html", values={}, errors={})
+
+    @app.post("/install")
+    def install_create():
+        if is_installed():
+            return redirect(url_for("dashboard"))
+        data = dict(request.form)
+        data["role"] = "ADMIN"
+        try:
+            validated = UserIn().load(data)
+        except ValidationError as err:
+            return render_template(
+                "install.html", values=request.form, errors=err.messages
+            ), 422
+        user = create_user(validated)
+        mark_installed()
+        login_user(user)
+        return redirect(url_for("dashboard"))
+
     @app.get("/")
     def dashboard():
         if not current_user.is_authenticated:
@@ -184,6 +223,10 @@ def register_routes(app):
         user = get_user(user_id)
         if user is None:
             abort(404)
+        if user.id == current_user.id:
+            return render_template(
+                "partials/users/delete_success.html", users=list_users()
+            ) + render_toast("error", "You can't delete your own account.")
         username = user.username
         delete_user(user)
         return render_template(

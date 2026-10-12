@@ -1,4 +1,5 @@
 from app.models.user import USER_ROLES, User
+from app.services.preferences import mark_installed, mark_uninstalled
 from app.services.user import create_user
 
 SEED_PASSWORD = "Password123456!!"
@@ -39,3 +40,11 @@ def register_seed_command(app):
         print("\nSeed accounts:")
         for data in seed_users:
             print(f"  {data['username']} / {data['password']}")
+
+        mark_installed()
+
+    @app.cli.command("uninstall")
+    def uninstall():
+        mark_uninstalled()
+        print("Instance marked as not installed. The next request will be")
+        print("redirected to /install.")
