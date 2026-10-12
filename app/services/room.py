@@ -12,8 +12,8 @@ def get_room(room_id):
 
 def _resolve_features(feature_ids):
     found = Feature.query.filter(Feature.id.in_(feature_ids)).all()
-    if len(found) < len(feature_ids):
-        missing = set(feature_ids) - {f.id for f in found}
+    missing = set(feature_ids) - {f.id for f in found}
+    if missing:
         raise ValueError(f"Unknown feature id(s): {sorted(missing)}")
     return found
 
