@@ -22,8 +22,11 @@ def get_rooms():
 @rooms_blp.input(RoomIn)
 @rooms_blp.output(RoomOut, status_code=201)
 def create_room_view(json_data):
-    room = create_room(json_data)
-    return room
+    try:
+        room = create_room(json_data)
+        return room
+    except ValueError as err:
+        abort(422, message=str(err))
 
 
 @rooms_blp.get("/<int:room_id>/")
@@ -42,8 +45,11 @@ def update_room_view(room_id, json_data):
     room = get_room(room_id)
     if room is None:
         abort(404, message="Room not found.")
-    room = update_room(room, json_data)
-    return room
+    try:
+        room = update_room(room, json_data)
+        return room
+    except ValueError as err:
+        abort(422, message=str(err))
 
 
 @rooms_blp.delete("/<int:room_id>/")
