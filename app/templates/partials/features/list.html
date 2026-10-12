@@ -1,0 +1,53 @@
+<div>
+    <div class="flex items-center justify-between mb-4">
+        <h2 class="text-xl font-semibold text-gray-800">Features</h2>
+        <label
+            for="modal-toggle"
+            hx-get="/features/new"
+            hx-target="#modal-content"
+            class="cursor-pointer inline-block bg-blue-600 text-white text-sm font-medium px-3 py-2 rounded-md hover:bg-blue-700"
+        >
+            + New Feature
+        </label>
+    </div>
+
+    <table class="w-full text-sm text-left bg-white rounded-md shadow overflow-hidden">
+        <thead class="bg-gray-100 text-gray-600 uppercase text-xs">
+            <tr>
+                <th class="px-4 py-2">Name</th>
+                <th class="px-4 py-2">Description</th>
+                <th class="px-4 py-2"></th>
+            </tr>
+        </thead>
+        <tbody class="divide-y divide-gray-100">
+            {% for feature in features %}
+            <tr>
+                <td class="px-4 py-2">{{ feature.name }}</td>
+                <td class="px-4 py-2">{{ feature.description or "" }}</td>
+                <td class="px-4 py-2 text-right space-x-2">
+                    <label
+                        for="modal-toggle"
+                        hx-get="/features/{{ feature.id }}/edit"
+                        hx-target="#modal-content"
+                        class="cursor-pointer text-blue-600 hover:underline"
+                    >
+                        Edit
+                    </label>
+                    <label
+                        for="confirm-toggle"
+                        hx-get="/features/{{ feature.id }}/delete/confirm"
+                        hx-target="#confirm-content"
+                        class="cursor-pointer text-red-600 hover:underline"
+                    >
+                        Delete
+                    </label>
+                </td>
+            </tr>
+            {% else %}
+            <tr>
+                <td class="px-4 py-2 text-gray-500" colspan="3">No features yet.</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
