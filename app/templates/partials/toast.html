@@ -1,0 +1,20 @@
+{% set toast_styles = {
+    "success": "bg-green-600 text-white",
+    "info": "bg-blue-600 text-white",
+    "warning": "bg-yellow-500 text-black",
+    "error": "bg-red-600 text-white",
+} %}
+<div hx-swap-oob="beforeend:#toast-container">
+    <input type="checkbox" id="toast-{{ toast_id }}" class="peer hidden">
+    <div
+        class="toast-auto-dismiss peer-checked:hidden flex items-center gap-3 rounded-md shadow-lg px-4 py-3 text-sm {{ toast_styles[level] }}"
+    >
+        <span>{{ message }}</span>
+        <label
+            for="toast-{{ toast_id }}"
+            class="ml-auto text-lg leading-none opacity-80 hover:opacity-100 cursor-pointer"
+        >
+            &times;
+        </label>
+    </div>
+</div>
