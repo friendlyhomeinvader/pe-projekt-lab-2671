@@ -18,7 +18,7 @@ login_manager = LoginManager()
 
 def create_app():
     app = APIFlask(
-        __name__, instance_relative_config=True, title="Keymaster API", version="0.1.1"
+        __name__, instance_relative_config=True, title="Keymaster API", version="0.1.3"
     )
 
     app.config["SQLALCHEMY_DATABASE_URI"] = os.environ.get(
