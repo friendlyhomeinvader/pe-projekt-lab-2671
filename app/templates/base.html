@@ -6,6 +6,13 @@
     <title>{% block title %}Keymaster{% endblock %}</title>
     <script src="https://unpkg.com/htmx.org@latest"></script>
     <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @keyframes toast-fade {
+            0%, 85% { opacity: 1; }
+            100% { opacity: 0; visibility: hidden; }
+        }
+        .toast-auto-dismiss { animation: toast-fade 5s forwards; }
+    </style>
 </head>
 <body class="flex h-screen w-screen overflow-hidden bg-gray-100">
     <aside class="flex w-64 shrink-0 flex-col bg-gray-900 text-gray-100">
@@ -46,9 +53,15 @@
     </main>
 
     {% include "partials/modal_toggle.html" %}
-    <div class="fixed inset-0 bg-black/50 hidden peer-checked:flex items-center justify-center z-40">
+    <div class="fixed inset-0 bg-black/50 hidden peer-checked/modal:flex items-center justify-center z-40">
         <label for="modal-toggle" class="absolute inset-0"></label>
         <div id="modal-content" class="relative z-10"></div>
+    </div>
+
+    {% include "partials/confirm_toggle.html" %}
+    <div class="fixed inset-0 bg-black/50 hidden peer-checked/confirm:flex items-center justify-center z-40">
+        <label for="confirm-toggle" class="absolute inset-0"></label>
+        <div id="confirm-content" class="relative z-10"></div>
     </div>
 
     <div id="toast-container" class="fixed bottom-4 right-4 z-50 flex flex-col gap-2"></div>

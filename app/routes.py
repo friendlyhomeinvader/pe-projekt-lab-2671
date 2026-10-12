@@ -85,10 +85,6 @@ def register_routes(app):
             return render_template("partials/users/list.html", users=list_users())
         return render_template("partials/coming_soon.html", label=item["label"])
 
-    @app.get("/toast/dismiss")
-    def toast_dismiss():
-        return ""
-
     app.register_error_handler(
         401, _html_error_handler("partials/login_required.html", 401)
     )
