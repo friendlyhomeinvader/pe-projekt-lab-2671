@@ -24,7 +24,7 @@ def create_room(data):
         location=data["location"],
         capacity=data["capacity"],
     )
-    if "feature_ids" in data and data["feature_ids"]:
+    if data.get("feature_ids"):
         room.features = _resolve_features(data["feature_ids"])
     db.session.add(room)
     db.session.commit()
