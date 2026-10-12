@@ -8,3 +8,13 @@ def user_payload(**overrides):
     }
     payload.update(overrides)
     return payload
+
+
+def room_payload(**overrides):
+    payload = {
+        "code": "A101",
+        "location": "Building A",
+        "capacity": 10,
+    }
+    payload.update(overrides)
+    return payload

@@ -1,6 +1,7 @@
+from app.schemas.room import RoomIn, RoomOut
 from app.schemas.user import UserIn, UserOut
 from tests.contract import ApiContract
-from tests.factories import user_payload
+from tests.factories import room_payload, user_payload
 
 USER_CONTRACT = ApiContract(
     name="users",
@@ -11,4 +12,13 @@ USER_CONTRACT = ApiContract(
     unique_fields=("username", "email"),
 )
 
-ALL_CONTRACTS = [USER_CONTRACT]
+ROOM_CONTRACT = ApiContract(
+    name="rooms",
+    url="/api/rooms/",
+    schema_in=RoomIn,
+    schema_out=RoomOut,
+    payload_factory=room_payload,
+    unique_fields=(),
+)
+
+ALL_CONTRACTS = [USER_CONTRACT, ROOM_CONTRACT]
