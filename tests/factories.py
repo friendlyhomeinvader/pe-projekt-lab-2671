@@ -8,3 +8,22 @@ def user_payload(**overrides):
     }
     payload.update(overrides)
     return payload
+
+
+def room_payload(**overrides):
+    payload = {
+        "code": "A101",
+        "location": "Building A",
+        "capacity": 10,
+    }
+    payload.update(overrides)
+    return payload
+
+
+def feature_payload(**overrides):
+    payload = {
+        "name": "Projector",
+        "description": "Ceiling-mounted projector",
+    }
+    payload.update(overrides)
+    return payload
