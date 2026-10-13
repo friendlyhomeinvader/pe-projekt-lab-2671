@@ -187,7 +187,11 @@ def register_routes(app):
             return render_template("partials/room_management.html", rooms=list_rooms())
         if module == "booking":
             return render_template(
-                "partials/booking/room_list.html", rooms=list_rooms()
+                "partials/booking/room_list.html",
+                rooms=list_rooms(),
+                all_features=list_features(),
+                min_capacity=None,
+                selected_feature_ids=[],
             )
         return render_template("partials/coming_soon.html", label=item["label"])
 
@@ -195,6 +199,17 @@ def register_routes(app):
         401, _html_error_handler("partials/login_required.html", 401)
     )
     app.register_error_handler(403, _html_error_handler("partials/forbidden.html", 403))
+
+    @app.get("/bookings/rooms/search")
+    def booking_rooms_search():
+        if not current_user.is_authenticated:
+            abort(401)
+        if not can_access_module(current_user.role, "booking"):
+            abort(403)
+        min_capacity = request.args.get("min_capacity", type=int)
+        feature_ids = [int(v) for v in request.args.getlist("feature_ids")]
+        rooms = list_rooms(min_capacity=min_capacity, feature_ids=feature_ids)
+        return render_template("partials/booking/room_table.html", rooms=rooms)
 
     @app.get("/bookings/rooms/<int:room_id>")
     def booking_calendar(room_id):

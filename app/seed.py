@@ -45,25 +45,28 @@ def _seed_users():
     ]
 
 
-def _seed_rooms():
+def _seed_rooms(feature_ids_by_name):
     return [
         {
             "code": "PC0",
             "location": "Building I, Ground Floor",
             "capacity": 30,
-            "feature_ids": [],
+            "feature_ids": [feature_ids_by_name["Video Conference"]],
         },
         {
             "code": "I1",
             "location": "Building I, Ground Floor",
             "capacity": 60,
-            "feature_ids": [],
+            "feature_ids": [feature_ids_by_name["Whiteboard"]],
         },
         {
             "code": "IK1",
             "location": "Building I, 10th Floor",
             "capacity": 150,
-            "feature_ids": [],
+            "feature_ids": [
+                feature_ids_by_name["Projector"],
+                feature_ids_by_name["Whiteboard"],
+            ],
         },
     ]
 
@@ -99,21 +102,6 @@ def register_seed_command(app):
         for data in seed_users:
             print(f"  {data['username']} / {data['password']}")
 
-        seed_rooms = _seed_rooms()
-        created_rooms = []
-        for data in seed_rooms:
-            if Room.query.filter_by(code=data["code"]).first() is not None:
-                continue
-            create_room(data)
-            created_rooms.append(data)
-
-        if created_rooms:
-            print("\nCreated rooms:")
-            for data in created_rooms:
-                print(f"  {data['code']}")
-        else:
-            print("\nNo new rooms created, all seed rooms already exist.")
-
         seed_features = _seed_features()
         created_features = []
         for data in seed_features:
@@ -128,6 +116,23 @@ def register_seed_command(app):
                 print(f"  {data['name']}")
         else:
             print("\nNo new features created, all seed features already exist.")
+
+        feature_ids_by_name = {f.name: f.id for f in Feature.query.all()}
+
+        seed_rooms = _seed_rooms(feature_ids_by_name)
+        created_rooms = []
+        for data in seed_rooms:
+            if Room.query.filter_by(code=data["code"]).first() is not None:
+                continue
+            create_room(data)
+            created_rooms.append(data)
+
+        if created_rooms:
+            print("\nCreated rooms:")
+            for data in created_rooms:
+                print(f"  {data['code']}")
+        else:
+            print("\nNo new rooms created, all seed rooms already exist.")
 
         room = Room.query.filter_by(code="IK1").first()
         if room is not None and Booking.query.filter_by(room_id=room.id).count() == 0:

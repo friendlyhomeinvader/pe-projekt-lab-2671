@@ -2,8 +2,13 @@ from app import db
 from app.models.room import Feature, Room
 
 
-def list_rooms():
-    return Room.query.order_by(Room.id).all()
+def list_rooms(min_capacity=None, feature_ids=None):
+    query = Room.query
+    if min_capacity is not None:
+        query = query.filter(Room.capacity >= min_capacity)
+    for feature_id in feature_ids or []:
+        query = query.filter(Room.features.any(Feature.id == feature_id))
+    return query.order_by(Room.id).all()
 
 
 def get_room(room_id):
