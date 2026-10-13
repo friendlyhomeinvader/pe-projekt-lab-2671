@@ -1,4 +1,4 @@
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, time, timedelta, timezone
 
 from app import db
 from app.models.booking import Booking
@@ -134,18 +134,11 @@ def register_seed_command(app):
             requester = User.query.filter_by(username="requester").first()
             admin = User.query.filter_by(username="admin").first()
             operator = User.query.filter_by(username="operator").first()
-            now = datetime.now(timezone.utc)
+            now = datetime.now(timezone.utc).replace(tzinfo=None)
             today = now.date()
 
             def at(date_, hour, minute=0):
-                return datetime(
-                    date_.year,
-                    date_.month,
-                    date_.day,
-                    hour,
-                    minute,
-                    tzinfo=timezone.utc,
-                )
+                return datetime.combine(date_, time(hour, minute))
 
             bookings = [
                 Booking(

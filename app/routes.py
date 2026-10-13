@@ -1,3 +1,5 @@
+from datetime import datetime
+
 from flask import abort, redirect, render_template, request, url_for
 from flask_login import current_user, login_user, logout_user
 from marshmallow import ValidationError
@@ -9,6 +11,8 @@ from app.schemas.feature import FeatureIn
 from app.schemas.room import RoomIn
 from app.schemas.user import UserIn
 from app.services.auth import authenticate, role_required
+from app.services.booking import create_booking
+from app.services.calendar import build_slot_picker, build_week_view
 from app.services.feature import (
     create_feature,
     delete_feature,
@@ -181,12 +185,129 @@ def register_routes(app):
             return render_template("partials/users/list.html", users=list_users())
         if module == "room-management":
             return render_template("partials/room_management.html", rooms=list_rooms())
+        if module == "booking":
+            return render_template(
+                "partials/booking/room_list.html", rooms=list_rooms()
+            )
         return render_template("partials/coming_soon.html", label=item["label"])
 
     app.register_error_handler(
         401, _html_error_handler("partials/login_required.html", 401)
     )
     app.register_error_handler(403, _html_error_handler("partials/forbidden.html", 403))
+
+    @app.get("/bookings/rooms/<int:room_id>")
+    def booking_calendar(room_id):
+        if not current_user.is_authenticated:
+            abort(401)
+        if not can_access_module(current_user.role, "booking"):
+            abort(403)
+        room = get_room(room_id)
+        if room is None:
+            abort(404)
+        week_offset = request.args.get("week_offset", default=0, type=int)
+        calendar = build_week_view(room_id, week_offset, current_user.id)
+        return render_template(
+            "booking_calendar.html",
+            room=room,
+            week_offset=week_offset,
+            nav_groups=grouped_visible_nav_items(current_user.role),
+            **calendar,
+        )
+
+    @app.get("/bookings/rooms/<int:room_id>/slots/new")
+    def booking_slot_new(room_id):
+        if not current_user.is_authenticated:
+            abort(401)
+        if not can_access_module(current_user.role, "booking"):
+            abort(403)
+        room = get_room(room_id)
+        if room is None:
+            abort(404)
+        row_start = datetime.fromisoformat(request.args["row_start"])
+        row_end = datetime.fromisoformat(request.args["row_end"])
+        gap_start = datetime.fromisoformat(request.args["gap_start"])
+        gap_end = datetime.fromisoformat(request.args["gap_end"])
+        week_offset = request.args.get("week_offset", default=0, type=int)
+        picker = build_slot_picker(
+            row_start,
+            row_end,
+            gap_start,
+            gap_end,
+            request.args.get("start"),
+            request.args.get("slots", type=int),
+        )
+        return render_template(
+            "partials/booking/slot_form.html",
+            room=room,
+            row_start_iso=row_start.isoformat(),
+            row_end_iso=row_end.isoformat(),
+            gap_start_iso=gap_start.isoformat(),
+            gap_end_iso=gap_end.isoformat(),
+            week_offset=week_offset,
+            **picker,
+        )
+
+    @app.post("/bookings/rooms/<int:room_id>/slots")
+    def booking_slot_create(room_id):
+        if not current_user.is_authenticated:
+            abort(401)
+        if not can_access_module(current_user.role, "booking"):
+            abort(403)
+        room = get_room(room_id)
+        if room is None:
+            abort(404)
+
+        row_start = datetime.fromisoformat(request.form["row_start"])
+        row_end = datetime.fromisoformat(request.form["row_end"])
+        gap_start = datetime.fromisoformat(request.form["gap_start"])
+        gap_end = datetime.fromisoformat(request.form["gap_end"])
+        week_offset = request.form.get("week_offset", default=0, type=int)
+        picker = build_slot_picker(
+            row_start,
+            row_end,
+            gap_start,
+            gap_end,
+            request.form.get("start"),
+            request.form.get("slots", type=int),
+        )
+
+        def _render_form(error, status):
+            return render_template(
+                "partials/booking/slot_form.html",
+                room=room,
+                row_start_iso=row_start.isoformat(),
+                row_end_iso=row_end.isoformat(),
+                gap_start_iso=gap_start.isoformat(),
+                gap_end_iso=gap_end.isoformat(),
+                week_offset=week_offset,
+                error=error,
+                **picker,
+            ), status
+
+        if not picker["start_options"]:
+            return _render_form("This slot is no longer available.", 422)
+
+        try:
+            create_booking(
+                {
+                    "start_date": picker["selected_start"],
+                    "end_date": picker["end_time"],
+                    "state": "PENDING",
+                    "requester_id": current_user.id,
+                    "room_id": room_id,
+                }
+            )
+        except ValueError as err:
+            return _render_form(str(err), 422)
+
+        calendar = build_week_view(room_id, week_offset, current_user.id)
+        return render_template(
+            "partials/booking/booking_success.html",
+            room=room,
+            week_offset=week_offset,
+            **calendar,
+        ) + render_toast("success", f"Booking created for {room.code}.")
 
     @app.get("/users/new")
     @role_required("ADMIN")
