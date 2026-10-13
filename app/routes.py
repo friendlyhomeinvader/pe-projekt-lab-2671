@@ -107,7 +107,7 @@ def _html_error_handler(template_name, status):
 def register_routes(app):
     @app.before_request
     def _require_install():
-        if request.path.startswith("/api/"):
+        if request.path.startswith(("/api/", "/docs", "/openapi")):
             return None
         if request.endpoint in (
             "install",
