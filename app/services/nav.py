@@ -1,3 +1,5 @@
+import itertools
+
 NAV_ITEMS = [
     {"slug": "booking", "label": "Booking", "allowed_roles": ("REQUESTER",)},
     {"slug": "key-handling", "label": "Key Handling", "allowed_roles": ("OPERATOR",)},
@@ -46,3 +48,12 @@ def can_access_module(role, slug):
 
 def visible_nav_items(role):
     return [item for item in NAV_ITEMS if can_access(role, item)]
+
+
+def grouped_visible_nav_items(role):
+    return [
+        {"domain": domain, "items": list(items)}
+        for domain, items in itertools.groupby(
+            visible_nav_items(role), key=lambda item: item["allowed_roles"][0]
+        )
+    ]
