@@ -16,6 +16,18 @@ def get_booking(booking_id):
     return db.session.get(Booking, booking_id)
 
 
+def list_bookings_for_room(room_id, range_start, range_end):
+    return (
+        Booking.query.filter(
+            Booking.room_id == room_id,
+            Booking.start_date < range_end,
+            range_start < Booking.end_date,
+        )
+        .order_by(Booking.start_date)
+        .all()
+    )
+
+
 def _resolve_requester(requester_id):
     requester = db.session.get(User, requester_id)
     if requester is None:

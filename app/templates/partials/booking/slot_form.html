@@ -1,0 +1,65 @@
+<div class="bg-white rounded-md shadow-lg p-6 w-96">
+    <h3 class="text-lg font-semibold text-gray-800 mb-2">New booking</h3>
+    <p class="text-gray-600 text-sm mb-4">Room {{ room.code }}</p>
+
+    {% if error %}
+    <p class="text-red-600 text-sm mb-3">{{ error }}</p>
+    {% endif %}
+
+    {% if not start_options %}
+    <p class="text-gray-500 text-sm italic mb-4">No valid start time available in this window.</p>
+    <label for="modal-toggle" class="inline-block cursor-pointer text-sm text-gray-600 hover:underline">Close</label>
+    {% else %}
+    <form
+        hx-get="{{ url_for('booking_slot_new', room_id=room.id) }}"
+        hx-trigger="change"
+        hx-target="#modal-content"
+    >
+        <input type="hidden" name="row_start" value="{{ row_start_iso }}">
+        <input type="hidden" name="row_end" value="{{ row_end_iso }}">
+        <input type="hidden" name="gap_start" value="{{ gap_start_iso }}">
+        <input type="hidden" name="gap_end" value="{{ gap_end_iso }}">
+        <input type="hidden" name="week_offset" value="{{ week_offset }}">
+
+        <label class="block text-sm font-medium text-gray-700 mb-1">Start time</label>
+        <select name="start" class="w-full border border-gray-300 rounded-md px-2 py-1.5 text-sm mb-3">
+            {% for opt in start_options %}
+            <option value="{{ opt.isoformat() }}" {% if opt == selected_start %}selected{% endif %}>
+                {{ opt.strftime("%H:%M") }}
+            </option>
+            {% endfor %}
+        </select>
+
+        <label class="block text-sm font-medium text-gray-700 mb-1">Number of time slots ({{ 45 }} min each)</label>
+        <select name="slots" class="w-full border border-gray-300 rounded-md px-2 py-1.5 text-sm mb-3">
+            {% for n in slot_options %}
+            <option value="{{ n }}" {% if n == selected_slots %}selected{% endif %}>
+                {{ n }} slot{{ "s" if n != 1 else "" }} ({{ n * 45 }} min)
+            </option>
+            {% endfor %}
+        </select>
+
+        <div class="bg-gray-50 border border-gray-200 rounded-md px-3 py-2 text-sm text-gray-700 mb-4">
+            {{ selected_start.strftime("%H:%M") }} &ndash; {{ end_time.strftime("%H:%M") }}
+        </div>
+
+        <div class="flex justify-end gap-2">
+            <label
+                for="modal-toggle"
+                class="cursor-pointer px-3 py-2 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-100"
+            >
+                Cancel
+            </label>
+            <button
+                type="button"
+                hx-post="{{ url_for('booking_slot_create', room_id=room.id) }}"
+                hx-target="#modal-content"
+                hx-swap="innerHTML"
+                class="bg-blue-600 text-white text-sm font-medium px-3 py-2 rounded-md hover:bg-blue-700"
+            >
+                Book
+            </button>
+        </div>
+    </form>
+    {% endif %}
+</div>
