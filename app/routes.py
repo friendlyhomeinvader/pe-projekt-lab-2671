@@ -223,10 +223,9 @@ def register_routes(app):
         week_offset = request.args.get("week_offset", default=0, type=int)
         calendar = build_week_view(room_id, week_offset, current_user.id)
         return render_template(
-            "booking_calendar.html",
+            "partials/booking/calendar_view.html",
             room=room,
             week_offset=week_offset,
-            nav_groups=grouped_visible_nav_items(current_user.role),
             **calendar,
         )
 
@@ -612,6 +611,14 @@ def register_routes(app):
         room = get_room(room_id)
         if room is None:
             abort(404)
+        if len(room.bookings) != 0:
+            return (
+                render_template(
+                    "partials/rooms/delete_success.html", rooms=list_rooms()
+                )
+                + render_toast("error", "Room has bookings, cannot delete."),
+                403,
+            )
         code = room.code
         try:
             delete_room(room)
