@@ -1,5 +1,6 @@
 from collections.abc import Callable
 from dataclasses import dataclass, field
+from datetime import datetime, timedelta
 
 import pytest
 from apiflask import fields, validators
@@ -71,6 +72,10 @@ def _alternate_value(contract, field_name, salt):
         raise ValueError(
             f"{contract.name}.{field_name}: no alternate OneOf choice available"
         )
+
+    if isinstance(schema_field, fields.DateTime):
+        base_dt = datetime.fromisoformat(base_value)
+        return (base_dt + timedelta(days=1)).isoformat()
 
     if isinstance(schema_field, fields.Email) and "@" in base_value:
         local, _, domain = base_value.partition("@")

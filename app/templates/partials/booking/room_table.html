@@ -1,0 +1,41 @@
+<table class="w-full text-sm text-left bg-white rounded-md shadow overflow-hidden">
+    <thead class="bg-gray-100 text-gray-600 uppercase text-xs">
+        <tr>
+            <th class="px-4 py-2">Code</th>
+            <th class="px-4 py-2">Location</th>
+            <th class="px-4 py-2">Capacity</th>
+            <th class="px-4 py-2">Features</th>
+            <th class="px-4 py-2"></th>
+        </tr>
+    </thead>
+    <tbody class="divide-y divide-gray-100">
+        {% for room in rooms %}
+        <tr>
+            <td class="px-4 py-2">{{ room.code }}</td>
+            <td class="px-4 py-2">{{ room.location }}</td>
+            <td class="px-4 py-2">{{ room.capacity }}</td>
+            <td class="px-4 py-2">
+                {% for feature in room.features %}
+                <span class="inline-block bg-gray-100 text-gray-700 text-xs px-2 py-0.5 rounded-full mr-1">{{ feature.name }}</span>
+                {% else %}
+                <span class="text-gray-400">&mdash;</span>
+                {% endfor %}
+            </td>
+            <td class="px-4 py-2 text-right">
+                <button
+                    hx-get="{{url_for('booking_calendar', room_id=room.id)}}"
+                    hx-target="closest main"
+                    hx-swap="innerHTML"
+                    class="inline-block bg-blue-600 text-white text-sm font-medium px-3 py-2 rounded-md hover:bg-blue-700"
+                >
+                    Book
+                </button>
+            </td>
+        </tr>
+        {% else %}
+        <tr>
+            <td class="px-4 py-2 text-gray-500" colspan="5">No rooms match the filters.</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>

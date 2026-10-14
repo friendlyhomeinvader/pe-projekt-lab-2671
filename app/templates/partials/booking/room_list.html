@@ -1,0 +1,52 @@
+<div>
+    <div class="flex items-center justify-between mb-4">
+        <h2 class="text-xl font-semibold text-gray-800">Rooms</h2>
+    </div>
+
+    <form class="bg-white rounded-md shadow p-4 mb-4 flex flex-wrap items-end gap-6">
+        <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">Min. capacity</label>
+            <input
+                type="number"
+                name="min_capacity"
+                min="0"
+                value="{{ min_capacity if min_capacity is not none else '' }}"
+                class="w-28 border border-gray-300 rounded-md px-2 py-1.5 text-sm"
+            >
+        </div>
+
+        <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">Features</label>
+            <div class="flex flex-wrap gap-3">
+                {% for feature in all_features %}
+                <label class="flex items-center gap-1.5 text-sm text-gray-700">
+                    <input
+                        type="checkbox"
+                        name="feature_ids"
+                        value="{{ feature.id }}"
+                        {% if feature.id in selected_feature_ids %}checked{% endif %}
+                    >
+                    {{ feature.name }}
+                </label>
+                {% else %}
+                <span class="text-sm text-gray-400">No features defined yet.</span>
+                {% endfor %}
+            </div>
+        </div>
+
+        <button
+            type="submit"
+            hx-get="{{ url_for('booking_rooms_search') }}"
+            hx-include="closest form"
+            hx-target="#booking-room-list"
+            hx-swap="innerHTML"
+            class="bg-blue-600 text-white text-sm font-medium px-3 py-2 rounded-md hover:bg-blue-700"
+        >
+            Search
+        </button>
+    </form>
+
+    <div id="booking-room-list">
+        {% include "partials/booking/room_table.html" %}
+    </div>
+</div>

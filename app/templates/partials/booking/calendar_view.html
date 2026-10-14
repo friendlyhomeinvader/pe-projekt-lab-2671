@@ -1,0 +1,85 @@
+<div class="flex items-center justify-between mb-4">
+    <div>
+        <h1 class="text-2xl font-semibold text-gray-800">{{ room.code }}</h1>
+        <p class="text-gray-600 text-sm">{{ room.location }}</p>
+    </div>
+    <div class="flex items-center gap-4">
+        <button
+            hx-get="{{url_for('booking_calendar', room_id=room.id, week_offset=prev_week_offset)}}"
+            hx-target="closest main"
+            hx-swap="innerHTML"
+            class="bg-blue-600 text-white text-sm font-medium px-3 py-2 rounded-md hover:bg-blue-700"
+        >
+            &larr; Prev week
+        </button>
+        <span class="text-sm font-medium text-gray-700">{{ week_label }}</span>
+        <button
+            hx-get="{{url_for('booking_calendar', room_id=room.id, week_offset=next_week_offset)}}"
+            hx-target="closest main"
+            hx-swap="innerHTML"
+            class="bg-blue-600 text-white text-sm font-medium px-3 py-2 rounded-md hover:bg-blue-700"
+        >
+            Next week &rarr;
+        </button>
+    </div>
+</div>
+
+<div class="bg-white rounded-md shadow overflow-x-auto">
+    <div style="display: grid; grid-template-columns: 80px repeat(5, 1fr); min-width: 900px;">
+        <div class="border-b border-gray-200"></div>
+        {% for day in days %}
+        <div class="border-b border-l border-gray-200 px-2 py-2 text-sm font-medium text-center {% if day.is_past %}text-gray-400{% else %}text-gray-700{% endif %}">
+            {{ day.label }}
+        </div>
+        {% endfor %}
+
+        <div class="relative" style="height: {{ day_height_px }}px;">
+            {% for hour in hours %}
+            <div class="h-16 border-t border-gray-200 text-xs text-gray-400 text-right pr-2">
+                {{ "%02d:00"|format(hour) }}
+            </div>
+            {% endfor %}
+        </div>
+
+        {% for day in days %}
+        <div class="relative border-l border-gray-200" style="height: {{ day_height_px }}px;">
+            {% for hour in hours %}
+            <div class="h-16 border-t border-gray-200"></div>
+            {% endfor %}
+
+            {% if day.past_overlay_height_pct > 0 %}
+            <div
+                class="absolute left-0 top-0 w-full bg-gray-100/70 pointer-events-none z-0"
+                style="height: {{ day.past_overlay_height_pct }}%;"
+            ></div>
+            {% endif %}
+
+            {% if day.is_today and day.now_top_pct is not none %}
+            <div
+                class="absolute left-0 w-full border-t-2 border-red-500 pointer-events-none z-20"
+                style="top: {{ day.now_top_pct }}%;"
+            ></div>
+            {% endif %}
+
+            {% for b in day.bookings %}
+            <div
+                class="absolute left-0 right-0 mx-1 rounded px-1 text-xs overflow-hidden z-10 {{ b.style }}"
+                style="top: {{ b.top_pct }}%; height: {{ b.height_pct }}%;"
+            >
+                {{ b.label }}
+            </div>
+            {% endfor %}
+
+            {% for c in day.clickable %}
+            <label
+                for="modal-toggle"
+                hx-get="{{ url_for('booking_slot_new', room_id=room.id, row_start=c.row_start_iso, row_end=c.row_end_iso, gap_start=c.gap_start_iso, gap_end=c.gap_end_iso, week_offset=week_offset) }}"
+                hx-target="#modal-content"
+                style="top: {{ c.top_pct }}%; height: {{ c.height_pct }}%;"
+                class="absolute left-0 right-0 mx-1 cursor-pointer hover:bg-blue-100/50 z-10"
+            ></label>
+            {% endfor %}
+        </div>
+        {% endfor %}
+    </div>
+</div>

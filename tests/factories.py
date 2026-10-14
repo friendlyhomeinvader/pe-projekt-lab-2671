@@ -1,3 +1,12 @@
+import itertools
+
+from app import db
+from app.models.room import Room
+from app.models.user import User
+
+_booking_counter = itertools.count()
+
+
 def user_payload(**overrides):
     payload = {
         "username": "john.doe",
@@ -12,9 +21,9 @@ def user_payload(**overrides):
 
 def room_payload(**overrides):
     payload = {
-        "code": "A101",
-        "location": "Building A",
-        "capacity": 10,
+        "code": "PC0",
+        "location": "Building I",
+        "capacity": 30,
     }
     payload.update(overrides)
     return payload
@@ -25,5 +34,40 @@ def feature_payload(**overrides):
         "name": "Projector",
         "description": "Ceiling-mounted projector",
     }
+    payload.update(overrides)
+    return payload
+
+
+def booking_payload(**overrides):
+    payload = {
+        "start_date": "2027-01-01T09:00:00",
+        "end_date": "2027-03-01T10:00:00",
+        "state": "PENDING",
+    }
+
+    if "requester_id" not in overrides:
+        n = next(_booking_counter)
+        user = User(
+            username=f"booking.requester.{n}",
+            display_name=f"Booking Requester {n}",
+            email=f"booking.requester.{n}@uni.su",
+            role="REQUESTER",
+        )
+        user.set_password("Password123456!!")
+        db.session.add(user)
+        db.session.commit()
+        payload["requester_id"] = user.id
+
+    if "room_id" not in overrides:
+        n = next(_booking_counter)
+        room = Room(
+            code=f"B{n}",
+            location="Building B",
+            capacity=10,
+        )
+        db.session.add(room)
+        db.session.commit()
+        payload["room_id"] = room.id
+
     payload.update(overrides)
     return payload
