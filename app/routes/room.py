@@ -32,6 +32,10 @@ def _room_save_success(room, verb):
     ) + render_toast("success", f"Room {room.code} {verb}.")
 
 
+def _field_for_room_error(err):
+    return "capacity" if "capacity" in str(err).lower() else "feature_ids"
+
+
 def register_room_routes(app):
     @app.get("/room-management")
     @role_required("ADMIN")
@@ -91,7 +95,7 @@ def register_room_routes(app):
             return _render_room_form(
                 is_edit=False,
                 values=form_data,
-                errors={"feature_ids": [str(err)]},
+                errors={_field_for_room_error(err): [str(err)]},
                 status=422,
             )
 
@@ -125,7 +129,7 @@ def register_room_routes(app):
                 is_edit=True,
                 room_id=room_id,
                 values=form_data,
-                errors={"feature_ids": [str(err)]},
+                errors={_field_for_room_error(err): [str(err)]},
                 status=422,
             )
 

@@ -23,7 +23,13 @@ def _resolve_features(feature_ids):
     return found
 
 
+def _validate_capacity(capacity):
+    if capacity < 0:
+        raise ValueError("Capacity cannot be negative.")
+
+
 def create_room(data):
+    _validate_capacity(data["capacity"])
     room = Room(
         code=data["code"],
         location=data["location"],
@@ -37,6 +43,8 @@ def create_room(data):
 
 
 def update_room(room, data):
+    if "capacity" in data:
+        _validate_capacity(data["capacity"])
     for field in ("code", "location", "capacity"):
         if field in data:
             setattr(room, field, data[field])
