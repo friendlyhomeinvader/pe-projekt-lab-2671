@@ -3,9 +3,9 @@
 
     <div class="relative inline-flex rounded-full bg-gray-200 p-1 text-sm mb-4">
         <input type="radio" name="room-mgmt-tab" id="room-mgmt-tab-rooms" class="peer/rooms hidden" checked
-               hx-get="/rooms" hx-target="#room-mgmt-content" hx-swap="innerHTML">
+               hx-get="/rooms" hx-target="#room-mgmt-content" hx-swap="innerHTML" hx-params="none">
         <input type="radio" name="room-mgmt-tab" id="room-mgmt-tab-features" class="peer/features hidden"
-               hx-get="/features" hx-target="#room-mgmt-content" hx-swap="innerHTML">
+               hx-get="/features" hx-target="#room-mgmt-content" hx-swap="innerHTML" hx-params="none">
         <div class="absolute inset-y-1 left-1 w-[calc(50%-4px)] rounded-full bg-blue-600 transition-transform duration-200 ease-in-out peer-checked/features:translate-x-full"></div>
         <label for="room-mgmt-tab-rooms" class="relative z-10 flex-1 text-center px-4 py-1.5 rounded-full cursor-pointer font-medium peer-checked/rooms:text-white text-gray-700 transition-colors">Rooms</label>
         <label for="room-mgmt-tab-features" class="relative z-10 flex-1 text-center px-4 py-1.5 rounded-full cursor-pointer font-medium peer-checked/features:text-white text-gray-700 transition-colors">Features</label>
