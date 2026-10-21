@@ -38,6 +38,21 @@ def feature_payload(**overrides):
     return payload
 
 
+def key_payload(**overrides):
+    payload = {
+        "tag": "K-100",
+        "is_master_key": False,
+    }
+    if "room_id" not in overrides and "room_ids" not in overrides:
+        n = next(_booking_counter)
+        room = Room(code=f"K{n}", location="Building K", capacity=10)
+        db.session.add(room)
+        db.session.commit()
+        payload["room_id"] = room.id
+    payload.update(overrides)
+    return payload
+
+
 def booking_payload(**overrides):
     payload = {
         "start_date": "2027-01-01T09:00:00",
