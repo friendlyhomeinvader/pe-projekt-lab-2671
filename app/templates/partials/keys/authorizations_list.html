@@ -1,0 +1,50 @@
+<div>
+    <div class="flex items-center justify-between mb-4">
+        <h2 class="text-xl font-semibold text-gray-800">Authorization</h2>
+    </div>
+
+    <table class="w-full text-sm text-left bg-white rounded-md shadow overflow-hidden">
+        <thead class="bg-gray-100 text-gray-600 uppercase text-xs">
+            <tr>
+                <th class="px-4 py-2">Tag</th>
+                <th class="px-4 py-2">Rooms</th>
+                <th class="px-4 py-2">Authorized Users</th>
+                <th class="px-4 py-2"></th>
+            </tr>
+        </thead>
+        <tbody class="divide-y divide-gray-100">
+            {% for key, authorizations in overview %}
+            <tr>
+                <td class="px-4 py-2">{{ key.tag }}</td>
+                <td class="px-4 py-2">
+                    <span class="inline-block bg-gray-100 text-gray-700 text-xs px-2 py-0.5 rounded-full mr-1">{{ key.room.code }}</span>
+                    {% for room in key.rooms %}
+                    <span class="inline-block bg-gray-100 text-gray-700 text-xs px-2 py-0.5 rounded-full mr-1">{{ room.code }}</span>
+                    {% endfor %}
+                </td>
+                <td class="px-4 py-2">
+                    {% for authorization in authorizations %}
+                    <span class="inline-block bg-gray-100 text-gray-700 text-xs px-2 py-0.5 rounded-full mr-1">{{ authorization.assignee.display_name }}</span>
+                    {% else %}
+                    <span class="text-gray-400">&mdash;</span>
+                    {% endfor %}
+                </td>
+                <td class="px-4 py-2 text-right space-x-2">
+                    <label
+                        for="modal-toggle"
+                        hx-get="/keys/{{ key.id }}/authorizations/edit"
+                        hx-target="#modal-content"
+                        class="cursor-pointer text-blue-600 hover:underline"
+                    >
+                        Manage Access
+                    </label>
+                </td>
+            </tr>
+            {% else %}
+            <tr>
+                <td class="px-4 py-2 text-gray-500" colspan="4">No master keys yet.</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>

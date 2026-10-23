@@ -7,10 +7,17 @@ from app import db
 from app.schemas.key import KeyIn
 from app.services.auth import role_required
 from app.services.key import create_key, delete_key, get_key, list_keys, update_key
+from app.services.key_authorization import (
+    active_assignee_ids_for_key,
+    diff_authorized_assignees,
+    list_master_keys_with_active_authorizations,
+    sync_key_authorizations,
+)
 from app.services.nav import grouped_visible_nav_items
 from app.services.notify import render_toast
 from app.services.page import htmx_only, render_page
 from app.services.room import list_rooms
+from app.services.user import list_users
 
 
 def _render_key_form(*, is_edit, values, errors, key_id=None, status=200):
@@ -50,11 +57,17 @@ def register_key_routes(app):
     @role_required("ADMIN")
     def key_management_page():
         return render_page(
-            "partials/keys/list.html",
+            "partials/key_management.html",
             nav_groups=grouped_visible_nav_items(current_user.role),
             title="Key Management",
             keys=list_keys(),
         )
+
+    @app.get("/keys")
+    @htmx_only
+    @role_required("ADMIN")
+    def keys_list():
+        return render_template("partials/keys/list.html", keys=list_keys())
 
     @app.get("/keys/new")
     @htmx_only
@@ -228,3 +241,80 @@ def register_key_routes(app):
         return render_template(
             "partials/keys/delete_success.html", keys=list_keys()
         ) + render_toast("success", f"Key {tag} deleted.")
+
+    @app.get("/key-authorizations")
+    @htmx_only
+    @role_required("ADMIN")
+    def key_authorizations_list():
+        return render_template(
+            "partials/keys/authorizations_list.html",
+            overview=list_master_keys_with_active_authorizations(),
+        )
+
+    @app.get("/keys/<int:key_id>/authorizations/edit")
+    @htmx_only
+    @role_required("ADMIN")
+    def keys_authorizations_edit(key_id):
+        key = get_key(key_id)
+        if key is None or not key.is_master_key:
+            abort(404)
+        return render_template(
+            "partials/keys/authorization_form.html",
+            key=key,
+            all_users=list_users(),
+            active_assignee_ids=active_assignee_ids_for_key(key_id),
+        )
+
+    @app.post("/keys/<int:key_id>/authorizations/review")
+    @role_required("ADMIN")
+    def keys_authorizations_review(key_id):
+        key = get_key(key_id)
+        if key is None or not key.is_master_key:
+            abort(404)
+
+        assignee_ids = sorted(int(v) for v in request.form.getlist("assignee_ids"))
+        to_grant_ids, to_revoke_ids = diff_authorized_assignees(key_id, assignee_ids)
+        users_by_id = {u.id: u for u in list_users()}
+        to_grant = [users_by_id[uid] for uid in to_grant_ids if uid in users_by_id]
+        to_revoke = [users_by_id[uid] for uid in to_revoke_ids if uid in users_by_id]
+
+        return (
+            render_template(
+                "partials/keys/authorization_review.html",
+                key=key,
+                assignee_ids=assignee_ids,
+                to_grant=to_grant,
+                to_revoke=to_revoke,
+            )
+            + render_template("partials/_close_modal.html")
+            + render_template("partials/_open_confirm.html")
+        )
+
+    @app.post("/keys/<int:key_id>/authorizations")
+    @role_required("ADMIN")
+    def keys_authorizations_update(key_id):
+        key = get_key(key_id)
+        if key is None or not key.is_master_key:
+            abort(404)
+
+        assignee_ids = [int(v) for v in request.form.getlist("assignee_ids")]
+
+        try:
+            granted, revoked = sync_key_authorizations(key, current_user.id, assignee_ids)
+        except ValueError as err:
+            return (
+                render_template(
+                    "partials/keys/authorizations_list.html",
+                    overview=list_master_keys_with_active_authorizations(),
+                )
+                + render_template("partials/_close_confirm.html")
+                + render_toast("error", str(err)),
+                422,
+            )
+
+        return render_template(
+            "partials/keys/authorizations_list.html",
+            overview=list_master_keys_with_active_authorizations(),
+        ) + render_template("partials/_close_confirm.html") + render_toast(
+            "success", f"Access to {key.tag} updated: {len(granted)} granted, {len(revoked)} revoked."
+        )
