@@ -34,14 +34,11 @@
                     {% endif %}
                 </td>
                 <td class="px-4 py-2">
+                    <span class="inline-block bg-gray-100 text-gray-700 text-xs px-2 py-0.5 rounded-full mr-1">{{ key.room.code }}</span>
                     {% if key.is_master_key %}
                         {% for room in key.rooms %}
                         <span class="inline-block bg-gray-100 text-gray-700 text-xs px-2 py-0.5 rounded-full mr-1">{{ room.code }}</span>
-                        {% else %}
-                        <span class="text-gray-400">&mdash;</span>
                         {% endfor %}
-                    {% else %}
-                        {{ key.room.code if key.room else "—" }}
                     {% endif %}
                 </td>
                 <td class="px-4 py-2 text-right space-x-2">

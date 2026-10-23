@@ -22,6 +22,7 @@
             <input
                 type="text"
                 name="tag"
+                required
                 value="{{ values.get('tag', '') }}"
                 class="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
             >
@@ -30,57 +31,64 @@
             {% endif %}
         </div>
 
-        <label class="flex items-center gap-2 text-sm text-gray-700">
+        <div>
             <input
                 type="checkbox"
                 name="is_master_key"
+                id="key-is-master-key"
                 class="peer"
+                {% if is_edit %}disabled{% endif %}
                 {% if values.get("is_master_key") %}checked{% endif %}
             >
-            Master key (grants access to multiple rooms)
-        </label>
-        {% if errors.get("is_master_key") %}
-        <p class="text-sm text-red-600 mt-1">{{ errors["is_master_key"][0] }}</p>
-        {% endif %}
-
-        <div>
-            <label class="block text-sm font-medium text-gray-700">Room</label>
-            <select
-                name="room_id"
-                class="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
-            >
-                <option value="">&mdash; none &mdash;</option>
-                {% for room in all_rooms %}
-                <option value="{{ room.id }}" {% if values.get("room_id") == room.id %}selected{% endif %}>
-                    {{ room.code }}
-                </option>
-                {% endfor %}
-            </select>
-            {% if errors.get("room_id") %}
-            <p class="text-sm text-red-600 mt-1">{{ errors["room_id"][0] }}</p>
+            <label for="key-is-master-key" class="ml-2 text-sm text-gray-700">
+                Master key (grants access to multiple rooms)
+                {% if is_edit %}
+                <span class="text-xs text-gray-400">(cannot be changed after creation)</span>
+                {% endif %}
+            </label>
+            {% if errors.get("is_master_key") %}
+            <p class="text-sm text-red-600 mt-1">{{ errors["is_master_key"][0] }}</p>
             {% endif %}
-        </div>
 
-        <div class="hidden peer-checked:block">
-            <label class="block text-sm font-medium text-gray-700">Rooms</label>
-            <div class="mt-1 max-h-40 overflow-y-auto rounded-md border border-gray-300 p-2 space-y-1">
-                {% for room in all_rooms %}
-                <label class="flex items-center gap-2 text-sm text-gray-700">
-                    <input
-                        type="checkbox"
-                        name="room_ids"
-                        value="{{ room.id }}"
-                        {% if room.id in values.get("room_ids", []) %}checked{% endif %}
-                    >
-                    {{ room.code }}
-                </label>
-                {% else %}
-                <p class="text-sm text-gray-500">No rooms defined yet.</p>
-                {% endfor %}
+            <div class="mt-3 peer-checked:hidden">
+                <label class="block text-sm font-medium text-gray-700">Room</label>
+                <select
+                    name="room_id"
+                    class="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
+                >
+                    <option value="" disabled {% if not values.get("room_id") %}selected{% endif %}>Select a room&hellip;</option>
+                    {% for room in all_rooms %}
+                    <option value="{{ room.id }}" {% if values.get("room_id") == room.id %}selected{% endif %}>
+                        {{ room.code }}
+                    </option>
+                    {% endfor %}
+                </select>
+                {% if errors.get("room_id") %}
+                <p class="text-sm text-red-600 mt-1">{{ errors["room_id"][0] }}</p>
+                {% endif %}
             </div>
-            {% if errors.get("room_ids") %}
-            <p class="text-sm text-red-600 mt-1">{{ errors["room_ids"][0] }}</p>
-            {% endif %}
+
+            <div class="mt-3 hidden peer-checked:block">
+                <label class="block text-sm font-medium text-gray-700">Rooms</label>
+                <div class="mt-1 max-h-40 overflow-y-auto rounded-md border border-gray-300 p-2 space-y-1">
+                    {% for room in all_rooms %}
+                    <label class="flex items-center gap-2 text-sm text-gray-700">
+                        <input
+                            type="checkbox"
+                            name="room_ids"
+                            value="{{ room.id }}"
+                            {% if room.id in values.get("room_ids", []) %}checked{% endif %}
+                        >
+                        {{ room.code }}
+                    </label>
+                    {% else %}
+                    <p class="text-sm text-gray-500">No rooms defined yet.</p>
+                    {% endfor %}
+                </div>
+                {% if errors.get("room_ids") %}
+                <p class="text-sm text-red-600 mt-1">{{ errors["room_ids"][0] }}</p>
+                {% endif %}
+            </div>
         </div>
 
         <div class="flex justify-end gap-2 pt-2">

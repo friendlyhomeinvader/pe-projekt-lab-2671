@@ -38,16 +38,11 @@ def _field_for_key_error(err):
         return "room_ids"
     if message.startswith("Unknown room id:"):
         return "room_id"
+    if message.startswith("is_master_key cannot be modified"):
+        return "is_master_key"
+    if "already in use" in message:
+        return "tag"
     return "_general"
-
-
-def _key_form_data():
-    form_data = request.form.to_dict()
-    form_data["is_master_key"] = "is_master_key" in request.form
-    room_id_raw = form_data.get("room_id", "")
-    form_data["room_id"] = int(room_id_raw) if room_id_raw else None
-    form_data["room_ids"] = [int(v) for v in request.form.getlist("room_ids")]
-    return form_data
 
 
 def register_key_routes(app):
@@ -78,7 +73,11 @@ def register_key_routes(app):
             "tag": key.tag,
             "is_master_key": key.is_master_key,
             "room_id": key.room_id,
-            "room_ids": [r.id for r in key.rooms],
+            "room_ids": (
+                sorted([key.room_id] + [r.id for r in key.rooms])
+                if key.is_master_key
+                else []
+            ),
         }
         return _render_key_form(
             is_edit=True, key_id=key.id, values=values, errors={}
@@ -87,13 +86,40 @@ def register_key_routes(app):
     @app.post("/keys")
     @role_required("ADMIN")
     def keys_create():
-        form_data = _key_form_data()
+        is_master_key = "is_master_key" in request.form
+        submitted_room_ids = sorted(int(v) for v in request.form.getlist("room_ids"))
+
+        if is_master_key and not submitted_room_ids:
+            return _render_key_form(
+                is_edit=False,
+                values={
+                    "tag": request.form.get("tag", ""),
+                    "is_master_key": True,
+                    "room_ids": [],
+                },
+                errors={"room_ids": ["Select at least one room."]},
+                status=422,
+            )
+
+        if is_master_key:
+            room_id = submitted_room_ids[0]
+            extra_room_ids = submitted_room_ids[1:]
+        else:
+            room_id_raw = request.form.get("room_id", "")
+            room_id = int(room_id_raw) if room_id_raw else None
+            extra_room_ids = []
+
+        form_data = request.form.to_dict()
+        form_data["is_master_key"] = is_master_key
+        form_data["room_id"] = room_id
+        form_data["room_ids"] = extra_room_ids
+        display_values = {**form_data, "room_ids": submitted_room_ids}
 
         try:
             data = KeyIn().load(form_data)
         except ValidationError as err:
             return _render_key_form(
-                is_edit=False, values=form_data, errors=err.messages, status=422
+                is_edit=False, values=display_values, errors=err.messages, status=422
             )
 
         try:
@@ -101,7 +127,7 @@ def register_key_routes(app):
         except ValueError as err:
             return _render_key_form(
                 is_edit=False,
-                values=form_data,
+                values=display_values,
                 errors={_field_for_key_error(err): [str(err)]},
                 status=422,
             )
@@ -115,7 +141,38 @@ def register_key_routes(app):
         if key is None:
             abort(404)
 
-        form_data = _key_form_data()
+        is_master_key = key.is_master_key
+        submitted_room_ids = sorted(int(v) for v in request.form.getlist("room_ids"))
+
+        if is_master_key and not submitted_room_ids:
+            return _render_key_form(
+                is_edit=True,
+                key_id=key_id,
+                values={
+                    "tag": request.form.get("tag", key.tag),
+                    "is_master_key": True,
+                    "room_ids": [],
+                },
+                errors={"room_ids": ["Select at least one room."]},
+                status=422,
+            )
+
+        if is_master_key:
+            room_id = submitted_room_ids[0]
+            extra_room_ids = submitted_room_ids[1:]
+        else:
+            room_id_raw = request.form.get("room_id", "")
+            room_id = int(room_id_raw) if room_id_raw else None
+            extra_room_ids = []
+
+        form_data = request.form.to_dict()
+        form_data["room_id"] = room_id
+        form_data["room_ids"] = extra_room_ids
+        display_values = {
+            **form_data,
+            "is_master_key": is_master_key,
+            "room_ids": submitted_room_ids,
+        }
 
         try:
             data = KeyIn(partial=True).load(form_data)
@@ -123,7 +180,7 @@ def register_key_routes(app):
             return _render_key_form(
                 is_edit=True,
                 key_id=key_id,
-                values=form_data,
+                values=display_values,
                 errors=err.messages,
                 status=422,
             )
@@ -134,7 +191,7 @@ def register_key_routes(app):
             return _render_key_form(
                 is_edit=True,
                 key_id=key_id,
-                values=form_data,
+                values=display_values,
                 errors={_field_for_key_error(err): [str(err)]},
                 status=422,
             )

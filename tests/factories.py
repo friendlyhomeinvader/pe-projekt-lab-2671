@@ -40,10 +40,10 @@ def feature_payload(**overrides):
 
 def key_payload(**overrides):
     payload = {
-        "tag": "K-100",
+        "tag": f"K-{next(_booking_counter)}",
         "is_master_key": False,
     }
-    if "room_id" not in overrides and "room_ids" not in overrides:
+    if "room_id" not in overrides:
         n = next(_booking_counter)
         room = Room(code=f"K{n}", location="Building K", capacity=10)
         db.session.add(room)

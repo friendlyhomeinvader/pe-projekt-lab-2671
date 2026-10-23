@@ -26,23 +26,27 @@ def _resolve_rooms(room_ids):
     return found
 
 
-def _validate_room_assignment(is_master_key, room_id, room_ids):
-    if is_master_key and room_id is not None:
-        raise ValueError("A master key cannot be assigned to a single room.")
+def _validate_additional_rooms(is_master_key, room_ids):
     if not is_master_key and room_ids:
-        raise ValueError("Only a master key can be assigned to multiple rooms.")
+        raise ValueError("Only a master key can have additional rooms.")
+
+
+def _validate_unique_tag(tag, exclude_id=None):
+    existing = Key.query.filter_by(tag=tag).first()
+    if existing is not None and existing.id != exclude_id:
+        raise ValueError(f"Tag '{tag}' is already in use.")
 
 
 def create_key(data):
+    _validate_unique_tag(data["tag"])
     is_master_key = data.get("is_master_key", False)
-    room_id = data.get("room_id")
     room_ids = data.get("room_ids") or []
-    _validate_room_assignment(is_master_key, room_id, room_ids)
+    _validate_additional_rooms(is_master_key, room_ids)
 
     key = Key(
         tag=data["tag"],
         is_master_key=is_master_key,
-        room_id=_resolve_room(room_id).id if room_id is not None else None,
+        room_id=_resolve_room(data["room_id"]).id,
     )
     if room_ids:
         key.rooms = _resolve_rooms(room_ids)
@@ -52,17 +56,19 @@ def create_key(data):
 
 
 def update_key(key, data):
-    is_master_key = data.get("is_master_key", key.is_master_key)
-    room_id = data["room_id"] if "room_id" in data else key.room_id
+    if "is_master_key" in data:
+        raise ValueError("is_master_key cannot be modified after creation.")
+
+    if "tag" in data:
+        _validate_unique_tag(data["tag"], exclude_id=key.id)
+
     room_ids = data["room_ids"] if "room_ids" in data else [r.id for r in key.rooms]
-    _validate_room_assignment(is_master_key, room_id, room_ids)
+    _validate_additional_rooms(key.is_master_key, room_ids)
 
     if "tag" in data:
         key.tag = data["tag"]
-    if "is_master_key" in data:
-        key.is_master_key = data["is_master_key"]
     if "room_id" in data:
-        key.room_id = _resolve_room(room_id).id if room_id is not None else None
+        key.room_id = _resolve_room(data["room_id"]).id
     if "room_ids" in data:
         key.rooms = _resolve_rooms(room_ids) if room_ids else []
 
