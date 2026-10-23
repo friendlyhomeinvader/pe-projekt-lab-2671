@@ -1,0 +1,101 @@
+<div class="bg-white rounded-md shadow-lg p-6 w-full max-w-md">
+    <h3 class="text-lg font-semibold text-gray-800 mb-4">
+        {{ "Edit Key" if is_edit else "New Key" }}
+    </h3>
+
+    {% if errors.get("_general") %}
+    <p class="text-sm text-red-600 mb-3">{{ errors["_general"][0] }}</p>
+    {% endif %}
+
+    <form
+        {% if is_edit %}
+        hx-patch="/keys/{{ key_id }}"
+        {% else %}
+        hx-post="/keys"
+        {% endif %}
+        hx-target="#modal-content"
+        hx-swap="innerHTML"
+        class="space-y-3"
+    >
+        <div>
+            <label class="block text-sm font-medium text-gray-700">Tag</label>
+            <input
+                type="text"
+                name="tag"
+                value="{{ values.get('tag', '') }}"
+                class="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
+            >
+            {% if errors.get("tag") %}
+            <p class="text-sm text-red-600 mt-1">{{ errors["tag"][0] }}</p>
+            {% endif %}
+        </div>
+
+        <label class="flex items-center gap-2 text-sm text-gray-700">
+            <input
+                type="checkbox"
+                name="is_master_key"
+                class="peer"
+                {% if values.get("is_master_key") %}checked{% endif %}
+            >
+            Master key (grants access to multiple rooms)
+        </label>
+        {% if errors.get("is_master_key") %}
+        <p class="text-sm text-red-600 mt-1">{{ errors["is_master_key"][0] }}</p>
+        {% endif %}
+
+        <div>
+            <label class="block text-sm font-medium text-gray-700">Room</label>
+            <select
+                name="room_id"
+                class="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
+            >
+                <option value="">&mdash; none &mdash;</option>
+                {% for room in all_rooms %}
+                <option value="{{ room.id }}" {% if values.get("room_id") == room.id %}selected{% endif %}>
+                    {{ room.code }}
+                </option>
+                {% endfor %}
+            </select>
+            {% if errors.get("room_id") %}
+            <p class="text-sm text-red-600 mt-1">{{ errors["room_id"][0] }}</p>
+            {% endif %}
+        </div>
+
+        <div class="hidden peer-checked:block">
+            <label class="block text-sm font-medium text-gray-700">Rooms</label>
+            <div class="mt-1 max-h-40 overflow-y-auto rounded-md border border-gray-300 p-2 space-y-1">
+                {% for room in all_rooms %}
+                <label class="flex items-center gap-2 text-sm text-gray-700">
+                    <input
+                        type="checkbox"
+                        name="room_ids"
+                        value="{{ room.id }}"
+                        {% if room.id in values.get("room_ids", []) %}checked{% endif %}
+                    >
+                    {{ room.code }}
+                </label>
+                {% else %}
+                <p class="text-sm text-gray-500">No rooms defined yet.</p>
+                {% endfor %}
+            </div>
+            {% if errors.get("room_ids") %}
+            <p class="text-sm text-red-600 mt-1">{{ errors["room_ids"][0] }}</p>
+            {% endif %}
+        </div>
+
+        <div class="flex justify-end gap-2 pt-2">
+            <label
+                for="modal-toggle"
+                class="cursor-pointer px-3 py-2 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-100"
+            >
+                Cancel
+            </label>
+            <button
+                type="submit"
+                class="bg-blue-600 text-white text-sm font-medium px-3 py-2 rounded-md hover:bg-blue-700"
+            >
+                Save
+            </button>
+        </div>
+    </form>
+</div>

@@ -1,0 +1,73 @@
+<div>
+    <div class="flex items-center justify-between mb-4">
+        <h2 class="text-xl font-semibold text-gray-800">Key Management</h2>
+        <label
+            for="modal-toggle"
+            hx-get="/keys/new"
+            hx-target="#modal-content"
+            class="cursor-pointer inline-block bg-blue-600 text-white text-sm font-medium px-3 py-2 rounded-md hover:bg-blue-700"
+        >
+            + New Key
+        </label>
+    </div>
+
+    <table class="w-full text-sm text-left bg-white rounded-md shadow overflow-hidden">
+        <thead class="bg-gray-100 text-gray-600 uppercase text-xs">
+            <tr>
+                <th class="px-4 py-2">ID</th>
+                <th class="px-4 py-2">Tag</th>
+                <th class="px-4 py-2">Type</th>
+                <th class="px-4 py-2">Rooms</th>
+                <th class="px-4 py-2"></th>
+            </tr>
+        </thead>
+        <tbody class="divide-y divide-gray-100">
+            {% for key in keys %}
+            <tr>
+                <td class="px-4 py-2">{{ key.id }}</td>
+                <td class="px-4 py-2">{{ key.tag }}</td>
+                <td class="px-4 py-2">
+                    {% if key.is_master_key %}
+                    <span class="inline-block bg-amber-100 text-amber-800 text-xs px-2 py-0.5 rounded-full">Master</span>
+                    {% else %}
+                    <span class="inline-block bg-gray-100 text-gray-700 text-xs px-2 py-0.5 rounded-full">Regular</span>
+                    {% endif %}
+                </td>
+                <td class="px-4 py-2">
+                    {% if key.is_master_key %}
+                        {% for room in key.rooms %}
+                        <span class="inline-block bg-gray-100 text-gray-700 text-xs px-2 py-0.5 rounded-full mr-1">{{ room.code }}</span>
+                        {% else %}
+                        <span class="text-gray-400">&mdash;</span>
+                        {% endfor %}
+                    {% else %}
+                        {{ key.room.code if key.room else "—" }}
+                    {% endif %}
+                </td>
+                <td class="px-4 py-2 text-right space-x-2">
+                    <label
+                        for="modal-toggle"
+                        hx-get="/keys/{{ key.id }}/edit"
+                        hx-target="#modal-content"
+                        class="cursor-pointer text-blue-600 hover:underline"
+                    >
+                        Edit
+                    </label>
+                    <label
+                        for="confirm-toggle"
+                        hx-get="/keys/{{ key.id }}/delete/confirm"
+                        hx-target="#confirm-content"
+                        class="cursor-pointer text-red-600 hover:underline"
+                    >
+                        Delete
+                    </label>
+                </td>
+            </tr>
+            {% else %}
+            <tr>
+                <td class="px-4 py-2 text-gray-500" colspan="5">No keys yet.</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
