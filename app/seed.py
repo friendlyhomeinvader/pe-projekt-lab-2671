@@ -2,9 +2,11 @@ from datetime import datetime, time, timedelta, timezone
 
 from app import db
 from app.models.booking import Booking
+from app.models.key import Key
 from app.models.room import Feature, Room
 from app.models.user import USER_ROLES, User
 from app.services.feature import create_feature
+from app.services.key import create_key
 from app.services.preferences import mark_installed, mark_uninstalled
 from app.services.room import create_room
 from app.services.user import create_user
@@ -45,6 +47,25 @@ def _seed_users():
     ]
 
 
+def _seed_extra_requesters():
+    return [
+        {
+            "username": "requester2",
+            "display_name": "Jane Requester",
+            "email": "requester2@uni.su",
+            "role": "REQUESTER",
+            "password": SEED_PASSWORD,
+        },
+        {
+            "username": "requester3",
+            "display_name": "Jack Requester",
+            "email": "requester3@uni.su",
+            "role": "REQUESTER",
+            "password": SEED_PASSWORD,
+        },
+    ]
+
+
 def _seed_rooms(feature_ids_by_name):
     return [
         {
@@ -79,10 +100,23 @@ def _seed_features():
     ]
 
 
+def _seed_keys(room_ids_by_code):
+    return [
+        {"tag": "IK1-KEY", "is_master_key": False, "room_id": room_ids_by_code["IK1"]},
+        {"tag": "PC0-KEY", "is_master_key": False, "room_id": room_ids_by_code["PC0"]},
+        {
+            "tag": "MASTER-KEY",
+            "is_master_key": True,
+            "room_id": room_ids_by_code["PC0"],
+            "room_ids": [room_ids_by_code["I1"], room_ids_by_code["IK1"]],
+        },
+    ]
+
+
 def register_seed_command(app):
     @app.cli.command("seed")
     def seed():
-        seed_users = _seed_users()
+        seed_users = _seed_users() + _seed_extra_requesters()
         created = []
 
         for data in seed_users:
@@ -134,11 +168,30 @@ def register_seed_command(app):
         else:
             print("\nNo new rooms created, all seed rooms already exist.")
 
+        room_ids_by_code = {r.code: r.id for r in Room.query.all()}
+
+        seed_keys = _seed_keys(room_ids_by_code)
+        created_keys = []
+        for data in seed_keys:
+            if Key.query.filter_by(tag=data["tag"]).first() is not None:
+                continue
+            create_key(data)
+            created_keys.append(data)
+
+        if created_keys:
+            print("\nCreated keys:")
+            for data in created_keys:
+                print(f"  {data['tag']}")
+        else:
+            print("\nNo new keys created, all seed keys already exist.")
+
         room = Room.query.filter_by(code="IK1").first()
         if room is not None and Booking.query.filter_by(room_id=room.id).count() == 0:
-            requester = User.query.filter_by(username="requester").first()
-            admin = User.query.filter_by(username="admin").first()
-            operator = User.query.filter_by(username="operator").first()
+            requesters = [
+                User.query.filter_by(username="requester").first(),
+                User.query.filter_by(username="requester2").first(),
+                User.query.filter_by(username="requester3").first(),
+            ]
             now = datetime.now(timezone.utc).replace(tzinfo=None)
             today = now.date()
 
@@ -150,63 +203,63 @@ def register_seed_command(app):
                     start_date=at(_prior_weekday(today, 1), 10),
                     end_date=at(_prior_weekday(today, 1), 10, 45),
                     state="FINISHED",
-                    requester_id=requester.id,
+                    requester_id=requesters[0].id,
                     room_id=room.id,
                 ),
                 Booking(
                     start_date=at(_prior_weekday(today, 2), 14),
                     end_date=at(_prior_weekday(today, 2), 15, 30),
                     state="FINISHED",
-                    requester_id=admin.id,
+                    requester_id=requesters[1].id,
                     room_id=room.id,
                 ),
                 Booking(
                     start_date=at(_prior_weekday(today, 3), 9),
                     end_date=at(_prior_weekday(today, 3), 9, 45),
                     state="NO_SHOW",
-                    requester_id=requester.id,
+                    requester_id=requesters[2].id,
                     room_id=room.id,
                 ),
                 Booking(
                     start_date=at(today, 6),
                     end_date=at(today, 7, 30),
                     state="NO_SHOW",
-                    requester_id=admin.id,
+                    requester_id=requesters[0].id,
                     room_id=room.id,
                 ),
                 Booking(
                     start_date=now - timedelta(minutes=45),
                     end_date=now + timedelta(minutes=45),
                     state="ACTIVE",
-                    requester_id=requester.id,
+                    requester_id=requesters[1].id,
                     room_id=room.id,
                 ),
                 Booking(
                     start_date=now + timedelta(hours=2),
                     end_date=now + timedelta(hours=2, minutes=45),
                     state="PENDING",
-                    requester_id=requester.id,
+                    requester_id=requesters[2].id,
                     room_id=room.id,
                 ),
                 Booking(
                     start_date=at(_next_weekday(today, 1), 10),
                     end_date=at(_next_weekday(today, 1), 11, 30),
                     state="PENDING",
-                    requester_id=admin.id,
+                    requester_id=requesters[0].id,
                     room_id=room.id,
                 ),
                 Booking(
                     start_date=at(_next_weekday(today, 2), 14),
                     end_date=at(_next_weekday(today, 2), 16, 15),
                     state="PENDING",
-                    requester_id=operator.id,
+                    requester_id=requesters[1].id,
                     room_id=room.id,
                 ),
                 Booking(
                     start_date=at(_next_weekday(today, 3), 9),
                     end_date=at(_next_weekday(today, 3), 9, 45),
                     state="PENDING",
-                    requester_id=requester.id,
+                    requester_id=requesters[2].id,
                     room_id=room.id,
                 ),
             ]

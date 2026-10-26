@@ -131,6 +131,7 @@ def issue_key(key, *, identification_type, identification_value, operator_id, ho
     booking = _resolve_booking_for_key(booking_id, key)
 
     if booking is not None:
+        booking.state = "ACTIVE"
         holder = booking.requester
     else:
         if not holder_id:
@@ -164,5 +165,7 @@ def return_key(transaction, *, room_condition_notes=None, damage_reported=False)
     transaction.returned_at = datetime.now(timezone.utc).replace(tzinfo=None)
     transaction.room_condition_notes = room_condition_notes or None
     transaction.damage_reported = bool(damage_reported)
+    if transaction.booking is not None:
+        transaction.booking.state = "FINISHED"
     db.session.commit()
     return transaction
