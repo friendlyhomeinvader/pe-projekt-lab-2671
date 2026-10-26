@@ -19,7 +19,7 @@ from app.services.key_transaction import (
     issue_key,
     key_room_ids,
     open_transactions_by_key_id,
-    resolve_room_key,
+    resolve_key_for_booking,
     return_key,
 )
 from app.services.notify import render_toast
@@ -154,10 +154,8 @@ def register_key_transaction_routes(app):
         booking = get_booking(booking_id)
         if booking is None:
             abort(404)
-        key = resolve_room_key(booking.room)
-        if key is None or (
-            key.is_master_key and key.id not in {k.id for k in list_authorized_keys()}
-        ):
+        key = resolve_key_for_booking(booking)
+        if key is None:
             return render_template(
                 "partials/key_handling/no_key_available.html", booking=booking
             )
@@ -190,7 +188,7 @@ def register_key_transaction_routes(app):
         booking = get_booking(booking_id)
         if booking is None:
             abort(404)
-        key = resolve_room_key(booking.room)
+        key = resolve_key_for_booking(booking)
         if key is None:
             abort(400)
 
@@ -234,7 +232,7 @@ def register_key_transaction_routes(app):
         booking = get_booking(booking_id)
         if booking is None:
             abort(404)
-        key = resolve_room_key(booking.room)
+        key = resolve_key_for_booking(booking)
         if key is None:
             abort(400)
         transaction = get_open_transaction(key.id)

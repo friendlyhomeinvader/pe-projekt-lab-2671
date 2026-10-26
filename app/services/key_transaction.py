@@ -6,6 +6,7 @@ from app.models.key import Key
 from app.models.key_transaction import KeyTransaction
 from app.models.user import USER_IDENTIFICATION_METHODS, User, UserIdentification
 from app.services.booking import LIVE_STATES
+from app.services.key_authorization import active_assignee_ids_for_key
 
 
 def key_room_ids(key):
@@ -88,9 +89,28 @@ def _resolve_booking_for_key(booking_id, key):
     return booking
 
 
-def resolve_room_key(room):
-    keys = sorted(room.key, key=lambda k: (k.is_master_key, k.id))
-    return keys[0] if keys else None
+def candidate_keys_for_booking(booking):
+    room_id = booking.room_id
+    non_master = Key.query.filter(Key.room_id == room_id, Key.is_master_key.is_(False)).all()
+    master_candidates = (
+        Key.query.filter(Key.is_master_key.is_(True))
+        .filter(db.or_(Key.room_id == room_id, Key.rooms.any(id=room_id)))
+        .all()
+    )
+    authorized_master = [
+        k for k in master_candidates
+        if booking.requester_id in active_assignee_ids_for_key(k.id)
+    ]
+    return non_master + authorized_master
+
+
+def resolve_key_for_booking(booking):
+    candidates = candidate_keys_for_booking(booking)
+    if not candidates:
+        return None
+    available = [k for k in candidates if not is_key_out(k.id)]
+    pool = available if available else candidates
+    return sorted(pool, key=lambda k: (k.is_master_key, k.id))[0]
 
 
 INELIGIBLE_HOLDER_ROLES = ("AUDITOR",)
