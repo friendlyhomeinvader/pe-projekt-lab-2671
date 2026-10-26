@@ -143,3 +143,12 @@ def list_in_progress_and_upcoming_bookings():
         })
     rows.sort(key=lambda row: row["sort_date"])
     return rows
+
+
+def list_unresolved_bookings():
+    now = datetime.now(timezone.utc).replace(tzinfo=None)
+    return (
+        Booking.query.filter(Booking.state.in_(LIVE_STATES), Booking.end_date <= now)
+        .order_by(Booking.end_date)
+        .all()
+    )

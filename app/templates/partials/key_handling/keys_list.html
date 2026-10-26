@@ -8,7 +8,7 @@
                 <th class="px-4 py-2">Tag</th>
                 <th class="px-4 py-2">Type</th>
                 <th class="px-4 py-2">Rooms</th>
-                <th class="px-4 py-2">Authorized Holders</th>
+                <th class="px-4 py-2"></th>
             </tr>
         </thead>
         <tbody class="divide-y divide-gray-100">
@@ -31,16 +31,8 @@
                         {% endfor %}
                     {% endif %}
                 </td>
-                <td class="px-4 py-2">
-                    {% if key.is_master_key %}
-                        {% for authorization in authorizations_by_key.get(key.id, []) %}
-                        <span class="inline-block bg-gray-100 text-gray-700 text-xs px-2 py-0.5 rounded-full mr-1">{{ authorization.assignee.display_name }}</span>
-                        {% else %}
-                        <span class="text-gray-400">&mdash;</span>
-                        {% endfor %}
-                    {% else %}
-                    <span class="text-gray-400">&mdash;</span>
-                    {% endif %}
+                <td class="px-4 py-2 text-right space-x-2">
+                    <button type="button" class="bg-gray-200 text-gray-600 text-xs font-medium px-2 py-1 rounded-md cursor-default">Issue</button>
                 </td>
             </tr>
             {% else %}
