@@ -31,7 +31,12 @@
                     {% endif %}
                 </td>
                 <td class="px-4 py-2 text-right">
-                    <button type="button" class="bg-gray-200 text-gray-600 text-xs font-medium px-2 py-1 rounded-md cursor-default">Resolve</button>
+                    <label
+                        for="modal-toggle"
+                        hx-get="/key-handling/bookings/{{ row.booking.id }}/transaction"
+                        hx-target="#modal-content"
+                        class="cursor-pointer text-xs font-medium px-2 py-1 rounded-md text-blue-600 hover:underline"
+                    >Resolve</label>
                 </td>
             </tr>
             {% else %}
@@ -68,7 +73,12 @@
                 <td class="px-4 py-2">{{ booking.end_date.strftime("%Y-%m-%d %H:%M") }}</td>
                 <td class="px-4 py-2">{{ booking.state }}</td>
                 <td class="px-4 py-2 text-right">
-                    <button type="button" class="bg-gray-200 text-gray-600 text-xs font-medium px-2 py-1 rounded-md cursor-default">Resolve</button>
+                    <label
+                        for="modal-toggle"
+                        hx-get="/key-handling/bookings/{{ booking.id }}/transaction"
+                        hx-target="#modal-content"
+                        class="cursor-pointer text-xs font-medium px-2 py-1 rounded-md text-blue-600 hover:underline"
+                    >Resolve</label>
                 </td>
             </tr>
             {% else %}

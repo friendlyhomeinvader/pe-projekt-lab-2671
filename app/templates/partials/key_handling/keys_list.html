@@ -32,7 +32,21 @@
                     {% endif %}
                 </td>
                 <td class="px-4 py-2 text-right space-x-2">
-                    <button type="button" class="bg-gray-200 text-gray-600 text-xs font-medium px-2 py-1 rounded-md cursor-default">Issue</button>
+                    {% if key.id in open_by_key %}
+                    <label
+                        for="modal-toggle"
+                        hx-get="/key-handling/keys/{{ key.id }}/transaction"
+                        hx-target="#modal-content"
+                        class="cursor-pointer text-xs font-medium px-2 py-1 rounded-md text-amber-700 hover:underline"
+                    >Return</label>
+                    {% else %}
+                    <label
+                        for="modal-toggle"
+                        hx-get="/key-handling/keys/{{ key.id }}/transaction"
+                        hx-target="#modal-content"
+                        class="cursor-pointer text-xs font-medium px-2 py-1 rounded-md text-blue-600 hover:underline"
+                    >Issue</label>
+                    {% endif %}
                 </td>
             </tr>
             {% else %}
