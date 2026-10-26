@@ -1,10 +1,27 @@
 from app import db
-from app.models.key import Key
+from app.models.key import Key, KeyAuthorization
 from app.models.room import Room
 
 
 def list_keys():
     return Key.query.order_by(Key.id).all()
+
+
+def list_authorized_keys():
+    return (
+        Key.query.filter(
+            db.or_(
+                Key.is_master_key.is_(False),
+                Key.id.in_(
+                    db.session.query(KeyAuthorization.key_id).filter(
+                        KeyAuthorization.revoked_at.is_(None)
+                    )
+                ),
+            )
+        )
+        .order_by(Key.id)
+        .all()
+    )
 
 
 def get_key(key_id):

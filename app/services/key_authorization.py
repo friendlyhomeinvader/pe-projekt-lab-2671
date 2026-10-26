@@ -79,6 +79,22 @@ def list_master_keys_with_active_authorizations():
     return [(key, by_key.get(key.id, [])) for key in keys]
 
 
+def active_authorizations_by_key_id(key_ids):
+    active = (
+        KeyAuthorization.query.filter(
+            KeyAuthorization.key_id.in_(key_ids), KeyAuthorization.revoked_at.is_(None)
+        )
+        .order_by(KeyAuthorization.id)
+        .all()
+        if key_ids
+        else []
+    )
+    by_key = {}
+    for auth in active:
+        by_key.setdefault(auth.key_id, []).append(auth)
+    return by_key
+
+
 def active_authorizations_for_key(key_id):
     return (
         KeyAuthorization.query.filter_by(key_id=key_id, revoked_at=None)

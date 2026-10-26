@@ -1,0 +1,53 @@
+<div>
+    <h2 class="text-xl font-semibold text-gray-800 mb-4">Keys</h2>
+
+    <table class="w-full text-sm text-left bg-white rounded-md shadow overflow-hidden">
+        <thead class="bg-gray-100 text-gray-600 uppercase text-xs">
+            <tr>
+                <th class="px-4 py-2">ID</th>
+                <th class="px-4 py-2">Tag</th>
+                <th class="px-4 py-2">Type</th>
+                <th class="px-4 py-2">Rooms</th>
+                <th class="px-4 py-2">Authorized Holders</th>
+            </tr>
+        </thead>
+        <tbody class="divide-y divide-gray-100">
+            {% for key in keys %}
+            <tr>
+                <td class="px-4 py-2">{{ key.id }}</td>
+                <td class="px-4 py-2">{{ key.tag }}</td>
+                <td class="px-4 py-2">
+                    {% if key.is_master_key %}
+                    <span class="inline-block bg-amber-100 text-amber-800 text-xs px-2 py-0.5 rounded-full">Master</span>
+                    {% else %}
+                    <span class="inline-block bg-gray-100 text-gray-700 text-xs px-2 py-0.5 rounded-full">Regular</span>
+                    {% endif %}
+                </td>
+                <td class="px-4 py-2">
+                    <span class="inline-block bg-gray-100 text-gray-700 text-xs px-2 py-0.5 rounded-full mr-1">{{ key.room.code }}</span>
+                    {% if key.is_master_key %}
+                        {% for room in key.rooms %}
+                        <span class="inline-block bg-gray-100 text-gray-700 text-xs px-2 py-0.5 rounded-full mr-1">{{ room.code }}</span>
+                        {% endfor %}
+                    {% endif %}
+                </td>
+                <td class="px-4 py-2">
+                    {% if key.is_master_key %}
+                        {% for authorization in authorizations_by_key.get(key.id, []) %}
+                        <span class="inline-block bg-gray-100 text-gray-700 text-xs px-2 py-0.5 rounded-full mr-1">{{ authorization.assignee.display_name }}</span>
+                        {% else %}
+                        <span class="text-gray-400">&mdash;</span>
+                        {% endfor %}
+                    {% else %}
+                    <span class="text-gray-400">&mdash;</span>
+                    {% endif %}
+                </td>
+            </tr>
+            {% else %}
+            <tr>
+                <td class="px-4 py-2 text-gray-500" colspan="5">No keys yet.</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
