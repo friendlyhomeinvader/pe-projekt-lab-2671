@@ -4,7 +4,10 @@ from apiflask import Schema, fields, validators
 class RoomIn(Schema):
     code = fields.String(required=True, validate=validators.Length(max=64))
     location = fields.String(required=True, validate=validators.Length(max=64))
-    capacity = fields.Integer(required=True)
+    capacity = fields.Integer(
+        required=True,
+        validate=validators.Range(min=0, error="Capacity cannot be negative."),
+    )
     feature_ids = fields.List(fields.Integer(), required=False, load_default=list)
 
 

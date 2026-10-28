@@ -1,0 +1,41 @@
+<div class="bg-white rounded-md shadow-lg p-6 w-full max-w-md">
+    <h3 class="text-lg font-semibold text-gray-800 mb-4">Manage Access &mdash; {{ key.tag }}</h3>
+
+    <form
+        hx-post="/keys/{{ key.id }}/authorizations/review"
+        hx-target="#confirm-content"
+        hx-swap="innerHTML"
+        class="space-y-3"
+    >
+        <div class="max-h-60 overflow-y-auto rounded-md border border-gray-300 p-2 space-y-1">
+            {% for user in all_users %}
+            <label class="flex items-center gap-2 text-sm text-gray-700">
+                <input
+                    type="checkbox"
+                    name="assignee_ids"
+                    value="{{ user.id }}"
+                    {% if user.id in active_assignee_ids %}checked{% endif %}
+                >
+                {{ user.display_name }} ({{ user.username }}, {{ user.role.title() }})
+            </label>
+            {% else %}
+            <p class="text-sm text-gray-500">No users defined yet.</p>
+            {% endfor %}
+        </div>
+
+        <div class="flex justify-end gap-2 pt-2">
+            <label
+                for="modal-toggle"
+                class="cursor-pointer px-3 py-2 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-100"
+            >
+                Cancel
+            </label>
+            <button
+                type="submit"
+                class="bg-blue-600 text-white text-sm font-medium px-3 py-2 rounded-md hover:bg-blue-700"
+            >
+                Review Changes
+            </button>
+        </div>
+    </form>
+</div>

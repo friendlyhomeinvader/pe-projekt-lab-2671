@@ -5,9 +5,9 @@
     "error": "bg-red-600 text-white",
 } %}
 <div hx-swap-oob="beforeend:#toast-container">
-    <input type="checkbox" id="toast-{{ toast_id }}" class="peer hidden">
+    <input type="checkbox" id="toast-{{ toast_id }}" class="peer/{{ toast_id }} hidden">
     <div
-        class="toast-auto-dismiss peer-checked:hidden flex items-center gap-3 rounded-md shadow-lg px-4 py-3 text-sm {{ toast_styles[level] }}"
+        class="toast-auto-dismiss peer-checked/{{ toast_id }}:hidden flex items-center gap-3 rounded-md shadow-lg px-4 py-3 text-sm {{ toast_styles[level] }}"
     >
         <span>{{ message }}</span>
         <label

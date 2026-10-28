@@ -36,10 +36,11 @@
 
         <button
             type="submit"
-            hx-get="{{ url_for('booking_rooms_search') }}"
+            hx-get="{{ url_for('booking_page') }}"
             hx-include="closest form"
-            hx-target="#booking-room-list"
+            hx-target="#main-content"
             hx-swap="innerHTML"
+            hx-push-url="true"
             class="bg-blue-600 text-white text-sm font-medium px-3 py-2 rounded-md hover:bg-blue-700"
         >
             Search

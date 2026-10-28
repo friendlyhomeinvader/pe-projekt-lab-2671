@@ -1,0 +1,17 @@
+<div>
+    <h2 class="text-xl font-semibold text-gray-800 mb-4">Key Handling</h2>
+
+    <div class="relative inline-flex rounded-full bg-gray-200 p-1 text-sm mb-4">
+        <input type="radio" name="key-handling-tab" id="key-handling-tab-keys" class="peer/keys hidden" checked
+               hx-get="/key-handling/keys" hx-target="#key-handling-content" hx-swap="innerHTML" hx-params="none">
+        <input type="radio" name="key-handling-tab" id="key-handling-tab-bookings" class="peer/bookings hidden"
+               hx-get="/key-handling/bookings" hx-target="#key-handling-content" hx-swap="innerHTML" hx-params="none">
+        <div class="absolute inset-y-1 left-1 w-[61px] rounded-full bg-blue-600 transition-[left,width] duration-200 ease-in-out peer-checked/bookings:left-[65px] peer-checked/bookings:w-[87px]"></div>
+        <label for="key-handling-tab-keys" class="relative z-10 whitespace-nowrap text-center px-4 py-1.5 rounded-full cursor-pointer font-medium peer-checked/keys:text-white text-gray-700 transition-colors">Keys</label>
+        <label for="key-handling-tab-bookings" class="relative z-10 whitespace-nowrap text-center px-4 py-1.5 rounded-full cursor-pointer font-medium peer-checked/bookings:text-white text-gray-700 transition-colors">Bookings</label>
+    </div>
+
+    <div id="key-handling-content">
+        {% include "partials/key_handling/keys_list.html" %}
+    </div>
+</div>

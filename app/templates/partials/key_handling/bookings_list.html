@@ -1,0 +1,91 @@
+<div>
+    <h3 class="text-lg font-semibold text-gray-800 mb-4">Bookings</h3>
+
+    <table class="w-full text-sm text-left bg-white rounded-md shadow overflow-hidden">
+        <thead class="bg-gray-100 text-gray-600 uppercase text-xs">
+            <tr>
+                <th class="px-4 py-2">Room</th>
+                <th class="px-4 py-2">Requester</th>
+                <th class="px-4 py-2">Start</th>
+                <th class="px-4 py-2">End</th>
+                <th class="px-4 py-2">Status</th>
+                <th class="px-4 py-2"></th>
+            </tr>
+        </thead>
+        <tbody class="divide-y divide-gray-100">
+            {% for row in booking_rows %}
+            <tr>
+                <td class="px-4 py-2">
+                    <span class="inline-block bg-gray-100 text-gray-700 text-xs px-2 py-0.5 rounded-full">{{ row.booking.room.code }}</span>
+                </td>
+                <td class="px-4 py-2">
+                    <span class="inline-block bg-gray-100 text-gray-700 text-xs px-2 py-0.5 rounded-full">{{ row.booking.requester.display_name }}</span>
+                </td>
+                <td class="px-4 py-2">{{ row.booking.start_date.strftime("%Y-%m-%d %H:%M") }}</td>
+                <td class="px-4 py-2">{{ row.booking.end_date.strftime("%Y-%m-%d %H:%M") }}</td>
+                <td class="px-4 py-2">
+                    {% if row.status == "IN_PROGRESS" %}
+                    <span class="inline-block bg-green-100 text-green-800 text-xs px-2 py-0.5 rounded-full">In Progress</span>
+                    {% else %}
+                    <span class="inline-block bg-blue-100 text-blue-800 text-xs px-2 py-0.5 rounded-full">Upcoming</span>
+                    {% endif %}
+                </td>
+                <td class="px-4 py-2 text-right">
+                    <label
+                        for="modal-toggle"
+                        hx-get="/key-handling/bookings/{{ row.booking.id }}/transaction"
+                        hx-target="#modal-content"
+                        class="cursor-pointer text-xs font-medium px-2 py-1 rounded-md text-blue-600 hover:underline"
+                    >Resolve</label>
+                </td>
+            </tr>
+            {% else %}
+            <tr>
+                <td class="px-4 py-2 text-gray-500" colspan="6">No in-progress or upcoming bookings.</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <h3 class="text-lg font-semibold text-gray-800 mb-4 mt-6">Unresolved</h3>
+
+    <table class="w-full text-sm text-left bg-white rounded-md shadow overflow-hidden">
+        <thead class="bg-gray-100 text-gray-600 uppercase text-xs">
+            <tr>
+                <th class="px-4 py-2">Room</th>
+                <th class="px-4 py-2">Requester</th>
+                <th class="px-4 py-2">Start</th>
+                <th class="px-4 py-2">End</th>
+                <th class="px-4 py-2">Status</th>
+                <th class="px-4 py-2"></th>
+            </tr>
+        </thead>
+        <tbody class="divide-y divide-gray-100">
+            {% for booking in unresolved_bookings %}
+            <tr>
+                <td class="px-4 py-2">
+                    <span class="inline-block bg-gray-100 text-gray-700 text-xs px-2 py-0.5 rounded-full">{{ booking.room.code }}</span>
+                </td>
+                <td class="px-4 py-2">
+                    <span class="inline-block bg-gray-100 text-gray-700 text-xs px-2 py-0.5 rounded-full">{{ booking.requester.display_name }}</span>
+                </td>
+                <td class="px-4 py-2">{{ booking.start_date.strftime("%Y-%m-%d %H:%M") }}</td>
+                <td class="px-4 py-2">{{ booking.end_date.strftime("%Y-%m-%d %H:%M") }}</td>
+                <td class="px-4 py-2">{{ booking.state }}</td>
+                <td class="px-4 py-2 text-right">
+                    <label
+                        for="modal-toggle"
+                        hx-get="/key-handling/bookings/{{ booking.id }}/transaction"
+                        hx-target="#modal-content"
+                        class="cursor-pointer text-xs font-medium px-2 py-1 rounded-md text-blue-600 hover:underline"
+                    >Resolve</label>
+                </td>
+            </tr>
+            {% else %}
+            <tr>
+                <td class="px-4 py-2 text-gray-500" colspan="6">No unresolved bookings.</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>

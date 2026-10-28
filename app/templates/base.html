@@ -18,7 +18,7 @@
     <style>
         @keyframes toast-fade {
             0%, 85% { opacity: 1; }
-            100% { opacity: 0; visibility: hidden; }
+            100% { opacity: 0; display: none; }
         }
         .toast-auto-dismiss { animation: toast-fade 5s forwards; }
     </style>
@@ -37,10 +37,10 @@
             {% for item in group['items'] %}
             <button
                 type="button"
-                hx-get="/fragments/{{ item.slug }}"
+                hx-get="/{{ item.slug }}"
                 hx-target="#main-content"
                 hx-swap="innerHTML"
-                hx-push-url="/"
+                hx-push-url="true"
                 class="w-full text-left px-3 py-2 rounded-md text-sm font-medium text-gray-200 hover:bg-gray-800 hover:text-white"
             >
                 {{ item.label }}
