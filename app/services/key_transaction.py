@@ -28,6 +28,14 @@ def is_key_out(key_id):
     return get_open_transaction(key_id) is not None
 
 
+def get_open_transaction_for_booking(booking_id):
+    return (
+        KeyTransaction.query.filter_by(booking_id=booking_id, state="ISSUED")
+        .order_by(KeyTransaction.id.desc())
+        .first()
+    )
+
+
 def open_transactions_by_key_id(key_ids):
     if not key_ids:
         return {}
@@ -131,6 +139,9 @@ def issue_key(key, *, identification_type, identification_value, operator_id, ho
     booking = _resolve_booking_for_key(booking_id, key)
 
     if booking is not None:
+        existing = get_open_transaction_for_booking(booking.id)
+        if existing is not None and existing.key_id != key.id:
+            raise ValueError("Booking already has a key issued.")
         booking.state = "ACTIVE"
         holder = booking.requester
     else:

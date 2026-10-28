@@ -15,6 +15,7 @@ from app.services.key_transaction import (
     eligible_holders,
     find_upcoming_booking_within,
     get_open_transaction,
+    get_open_transaction_for_booking,
     is_key_out,
     issue_key,
     key_room_ids,
@@ -154,19 +155,20 @@ def register_key_transaction_routes(app):
         booking = get_booking(booking_id)
         if booking is None:
             abort(404)
+        open_transaction = get_open_transaction_for_booking(booking.id)
+        if open_transaction is not None:
+            return render_template(
+                "partials/key_handling/return_form.html",
+                key=get_key(open_transaction.key_id),
+                transaction=open_transaction,
+                entry="booking",
+                booking=booking,
+                error=None,
+            )
         key = resolve_key_for_booking(booking)
         if key is None:
             return render_template(
                 "partials/key_handling/no_key_available.html", booking=booking
-            )
-        if is_key_out(key.id):
-            return render_template(
-                "partials/key_handling/return_form.html",
-                key=key,
-                transaction=get_open_transaction(key.id),
-                entry="booking",
-                booking=booking,
-                error=None,
             )
         return render_template(
             "partials/key_handling/issue_form.html",
@@ -232,12 +234,10 @@ def register_key_transaction_routes(app):
         booking = get_booking(booking_id)
         if booking is None:
             abort(404)
-        key = resolve_key_for_booking(booking)
-        if key is None:
-            abort(400)
-        transaction = get_open_transaction(key.id)
+        transaction = get_open_transaction_for_booking(booking.id)
         if transaction is None:
             abort(400)
+        key = get_key(transaction.key_id)
 
         try:
             return_key(
