@@ -132,15 +132,19 @@ def delete_booking(booking):
 
 def list_in_progress_and_upcoming_bookings():
     now = datetime.now(timezone.utc).replace(tzinfo=None)
-    live = Booking.query.filter(Booking.state.in_(LIVE_STATES), Booking.end_date > now).all()
+    live = Booking.query.filter(
+        Booking.state.in_(LIVE_STATES), Booking.end_date > now
+    ).all()
     rows = []
     for booking in live:
         in_progress = booking.start_date <= now
-        rows.append({
-            "booking": booking,
-            "status": "IN_PROGRESS" if in_progress else "UPCOMING",
-            "sort_date": booking.end_date if in_progress else booking.start_date,
-        })
+        rows.append(
+            {
+                "booking": booking,
+                "status": "IN_PROGRESS" if in_progress else "UPCOMING",
+                "sort_date": booking.end_date if in_progress else booking.start_date,
+            }
+        )
     rows.sort(key=lambda row: row["sort_date"])
     return rows
 

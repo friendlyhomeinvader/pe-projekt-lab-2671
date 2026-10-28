@@ -39,7 +39,9 @@ def grant_key_authorization(data):
         key_id=data["key_id"], assignee_id=data["assignee_id"], revoked_at=None
     ).first()
     if existing is not None:
-        raise ValueError("This assignee already has an active authorization for this key.")
+        raise ValueError(
+            "This assignee already has an active authorization for this key."
+        )
 
     authorization = KeyAuthorization(
         key_id=data["key_id"],
@@ -115,13 +117,19 @@ def diff_authorized_assignees(key_id, assignee_ids):
 
 def sync_key_authorizations(key, assigner_id, assignee_ids):
     to_grant_ids, to_revoke_ids = diff_authorized_assignees(key.id, assignee_ids)
-    current_by_assignee = {a.assignee_id: a for a in active_authorizations_for_key(key.id)}
+    current_by_assignee = {
+        a.assignee_id: a for a in active_authorizations_for_key(key.id)
+    }
 
     granted = []
     for assignee_id in to_grant_ids:
         granted.append(
             grant_key_authorization(
-                {"key_id": key.id, "assignee_id": assignee_id, "assigner_id": assigner_id}
+                {
+                    "key_id": key.id,
+                    "assignee_id": assignee_id,
+                    "assigner_id": assigner_id,
+                }
             )
         )
 

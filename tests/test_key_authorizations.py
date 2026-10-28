@@ -59,7 +59,11 @@ def test_grant_against_non_master_key_is_rejected(client):
 
     response = client.post(
         "/api/key-authorizations/grant",
-        json={"key_id": key["id"], "assignee_id": assignee_id, "assigner_id": assigner_id},
+        json={
+            "key_id": key["id"],
+            "assignee_id": assignee_id,
+            "assigner_id": assigner_id,
+        },
     )
 
     assert_status(response, 422)
@@ -73,7 +77,11 @@ def test_grant_against_master_key_succeeds(client):
 
     response = client.post(
         "/api/key-authorizations/grant",
-        json={"key_id": key["id"], "assignee_id": assignee_id, "assigner_id": assigner_id},
+        json={
+            "key_id": key["id"],
+            "assignee_id": assignee_id,
+            "assigner_id": assigner_id,
+        },
     )
 
     assert_status(response, 201)
@@ -92,7 +100,11 @@ def test_grant_duplicate_active_authorization_is_rejected(client):
 
     response = client.post(
         "/api/key-authorizations/grant",
-        json={"key_id": key["id"], "assignee_id": assignee_id, "assigner_id": assigner_id},
+        json={
+            "key_id": key["id"],
+            "assignee_id": assignee_id,
+            "assigner_id": assigner_id,
+        },
     )
 
     assert_status(response, 422)
@@ -112,7 +124,11 @@ def test_grant_after_revoke_succeeds_with_new_row(client):
 
     second_response = client.post(
         "/api/key-authorizations/grant",
-        json={"key_id": key["id"], "assignee_id": assignee_id, "assigner_id": assigner_id},
+        json={
+            "key_id": key["id"],
+            "assignee_id": assignee_id,
+            "assigner_id": assigner_id,
+        },
     )
 
     assert_status(second_response, 201)

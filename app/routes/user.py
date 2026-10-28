@@ -10,7 +10,13 @@ from app.services.auth import role_required
 from app.services.nav import grouped_visible_nav_items
 from app.services.notify import render_toast
 from app.services.page import htmx_only, render_page
-from app.services.user import create_user, delete_user, get_user, list_users, update_user
+from app.services.user import (
+    create_user,
+    delete_user,
+    get_user,
+    list_users,
+    update_user,
+)
 
 DUPLICATE_FIELD_ERROR = {"username": ["Username or email already exists."]}
 

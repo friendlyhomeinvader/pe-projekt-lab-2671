@@ -7,7 +7,9 @@ def render_page(fragment_template, *, nav_groups, title, **context):
     fragment = render_template(fragment_template, **context)
     if request.headers.get("HX-Request"):
         return fragment
-    return render_template("page.html", content=fragment, nav_groups=nav_groups, title=title)
+    return render_template(
+        "page.html", content=fragment, nav_groups=nav_groups, title=title
+    )
 
 
 def htmx_only(view_func):

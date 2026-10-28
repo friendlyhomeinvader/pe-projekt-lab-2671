@@ -41,9 +41,13 @@ def _issue_form_context_for_key(key, booking_id_raw):
         "selected_booking_id": selected_booking.id if selected_booking else None,
         "booking": None,
         "linked_booking": selected_booking,
-        "selected_holder_id": selected_booking.requester_id if selected_booking else None,
+        "selected_holder_id": selected_booking.requester_id
+        if selected_booking
+        else None,
         "warning_booking": (
-            find_upcoming_booking_within(key_room_ids(key)) if selected_booking is None else None
+            find_upcoming_booking_within(key_room_ids(key))
+            if selected_booking is None
+            else None
         ),
         "all_users": eligible_holders(),
         "error": None,
@@ -104,16 +108,22 @@ def register_key_transaction_routes(app):
             )
         except (ValueError, TypeError) as err:
             context = _issue_form_context_for_key(key, booking_id_raw)
-            context["selected_holder_id"] = int(holder_id) if holder_id else context["selected_holder_id"]
+            context["selected_holder_id"] = (
+                int(holder_id) if holder_id else context["selected_holder_id"]
+            )
             context["error"] = str(err)
-            return render_template("partials/key_handling/issue_form.html", **context), 422
+            return render_template(
+                "partials/key_handling/issue_form.html", **context
+            ), 422
 
         keys = list_authorized_keys()
         return render_template(
             "partials/key_handling/_keys_list_oob.html",
             keys=keys,
             open_by_key=open_transactions_by_key_id([k.id for k in keys]),
-        ) + render_toast("success", f"{key.tag} issued to {transaction.holder.display_name}.")
+        ) + render_toast(
+            "success", f"{key.tag} issued to {transaction.holder.display_name}."
+        )
 
     @app.post("/key-handling/keys/<int:key_id>/return")
     @role_required("OPERATOR")
@@ -216,7 +226,9 @@ def register_key_transaction_routes(app):
                 key=key,
                 bookings=None,
                 selected_booking_id=booking.id,
-                selected_holder_id=int(holder_id) if holder_id else booking.requester_id,
+                selected_holder_id=int(holder_id)
+                if holder_id
+                else booking.requester_id,
                 warning_booking=None,
                 all_users=eligible_holders(),
                 error=str(err),
@@ -226,7 +238,9 @@ def register_key_transaction_routes(app):
             "partials/key_handling/_bookings_list_oob.html",
             booking_rows=list_in_progress_and_upcoming_bookings(),
             unresolved_bookings=list_unresolved_bookings(),
-        ) + render_toast("success", f"{key.tag} issued to {transaction.holder.display_name}.")
+        ) + render_toast(
+            "success", f"{key.tag} issued to {transaction.holder.display_name}."
+        )
 
     @app.post("/key-handling/bookings/<int:booking_id>/return")
     @role_required("OPERATOR")

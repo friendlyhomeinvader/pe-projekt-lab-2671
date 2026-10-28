@@ -10,7 +10,13 @@ from app.services.feature import list_features
 from app.services.nav import grouped_visible_nav_items
 from app.services.notify import render_toast
 from app.services.page import htmx_only, render_page
-from app.services.room import create_room, delete_room, get_room, list_rooms, update_room
+from app.services.room import (
+    create_room,
+    delete_room,
+    get_room,
+    list_rooms,
+    update_room,
+)
 
 
 def _render_room_form(*, is_edit, values, errors, room_id=None, status=200):

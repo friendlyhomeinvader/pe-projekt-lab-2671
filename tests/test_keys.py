@@ -32,9 +32,7 @@ def test_create_with_duplicate_tag_is_rejected(client):
     r2 = _create_room("RK32")
     _create_key(client, tag="DUPTAG", room_id=r1)
 
-    response = client.post(
-        "/api/keys/", json=key_payload(tag="DUPTAG", room_id=r2)
-    )
+    response = client.post("/api/keys/", json=key_payload(tag="DUPTAG", room_id=r2))
 
     assert_status(response, 422)
     assert "already in use" in response.json["message"].lower()

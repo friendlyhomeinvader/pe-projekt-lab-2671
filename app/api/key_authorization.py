@@ -9,7 +9,10 @@ from app.services.key_authorization import (
 )
 
 key_authorizations_blp = APIBlueprint(
-    "key_authorizations", __name__, url_prefix="/api/key-authorizations", tag="Key Authorizations"
+    "key_authorizations",
+    __name__,
+    url_prefix="/api/key-authorizations",
+    tag="Key Authorizations",
 )
 
 

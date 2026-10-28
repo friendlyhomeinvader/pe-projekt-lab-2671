@@ -99,14 +99,17 @@ def _resolve_booking_for_key(booking_id, key):
 
 def candidate_keys_for_booking(booking):
     room_id = booking.room_id
-    non_master = Key.query.filter(Key.room_id == room_id, Key.is_master_key.is_(False)).all()
+    non_master = Key.query.filter(
+        Key.room_id == room_id, Key.is_master_key.is_(False)
+    ).all()
     master_candidates = (
         Key.query.filter(Key.is_master_key.is_(True))
         .filter(db.or_(Key.room_id == room_id, Key.rooms.any(id=room_id)))
         .all()
     )
     authorized_master = [
-        k for k in master_candidates
+        k
+        for k in master_candidates
         if booking.requester_id in active_assignee_ids_for_key(k.id)
     ]
     return non_master + authorized_master
@@ -118,17 +121,29 @@ def resolve_key_for_booking(booking):
         return None
     available = [k for k in candidates if not is_key_out(k.id)]
     pool = available if available else candidates
-    return sorted(pool, key=lambda k: (k.is_master_key, k.id))[0]
+    return min(pool, key=lambda k: (k.is_master_key, k.id))
 
 
 INELIGIBLE_HOLDER_ROLES = ("AUDITOR",)
 
 
 def eligible_holders():
-    return User.query.filter(~User.role.in_(INELIGIBLE_HOLDER_ROLES)).order_by(User.id).all()
+    return (
+        User.query.filter(~User.role.in_(INELIGIBLE_HOLDER_ROLES))
+        .order_by(User.id)
+        .all()
+    )
 
 
-def issue_key(key, *, identification_type, identification_value, operator_id, holder_id=None, booking_id=None):
+def issue_key(
+    key,
+    *,
+    identification_type,
+    identification_value,
+    operator_id,
+    holder_id=None,
+    booking_id=None,
+):
     if is_key_out(key.id):
         raise ValueError("Key is already issued.")
     if identification_type not in USER_IDENTIFICATION_METHODS:
@@ -149,9 +164,13 @@ def issue_key(key, *, identification_type, identification_value, operator_id, ho
             raise ValueError("Holder is required.")
         holder = _resolve_user(holder_id)
         if holder.role in INELIGIBLE_HOLDER_ROLES:
-            raise ValueError(f"Cannot issue a key to a user with role {holder.role.title()}.")
+            raise ValueError(
+                f"Cannot issue a key to a user with role {holder.role.title()}."
+            )
 
-    identification = UserIdentification(type=identification_type, value=identification_value)
+    identification = UserIdentification(
+        type=identification_type, value=identification_value
+    )
     db.session.add(identification)
     db.session.flush()
 

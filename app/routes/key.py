@@ -92,9 +92,7 @@ def register_key_routes(app):
                 else []
             ),
         }
-        return _render_key_form(
-            is_edit=True, key_id=key.id, values=values, errors={}
-        )
+        return _render_key_form(is_edit=True, key_id=key.id, values=values, errors={})
 
     @app.post("/keys")
     @role_required("ADMIN")
@@ -232,9 +230,7 @@ def register_key_routes(app):
         except SQLAlchemyError:
             db.session.rollback()
             return (
-                render_template(
-                    "partials/keys/delete_success.html", keys=list_keys()
-                )
+                render_template("partials/keys/delete_success.html", keys=list_keys())
                 + render_toast("error", "Failed to delete key. Please try again."),
                 500,
             )
@@ -300,7 +296,9 @@ def register_key_routes(app):
         assignee_ids = [int(v) for v in request.form.getlist("assignee_ids")]
 
         try:
-            granted, revoked = sync_key_authorizations(key, current_user.id, assignee_ids)
+            granted, revoked = sync_key_authorizations(
+                key, current_user.id, assignee_ids
+            )
         except ValueError as err:
             return (
                 render_template(
@@ -312,9 +310,14 @@ def register_key_routes(app):
                 422,
             )
 
-        return render_template(
-            "partials/keys/authorizations_list.html",
-            overview=list_master_keys_with_active_authorizations(),
-        ) + render_template("partials/_close_confirm.html") + render_toast(
-            "success", f"Access to {key.tag} updated: {len(granted)} granted, {len(revoked)} revoked."
+        return (
+            render_template(
+                "partials/keys/authorizations_list.html",
+                overview=list_master_keys_with_active_authorizations(),
+            )
+            + render_template("partials/_close_confirm.html")
+            + render_toast(
+                "success",
+                f"Access to {key.tag} updated: {len(granted)} granted, {len(revoked)} revoked.",
+            )
         )
