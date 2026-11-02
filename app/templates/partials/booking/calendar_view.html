@@ -65,10 +65,19 @@
 
             {% for b in day.bookings %}
             <div
-                class="absolute left-0 right-0 mx-1 rounded px-1 text-xs overflow-hidden z-10 {{ b.style }}"
+                class="absolute left-0 right-0 mx-1 rounded px-1 text-xs overflow-hidden z-10 flex items-center justify-between gap-1 {{ b.style }}"
                 style="top: {{ b.top_pct }}%; height: {{ b.height_pct }}%;"
             >
-                {{ b.label }}
+                <span class="truncate">{{ b.label }}</span>
+                {% if b.is_own and b.state == "PENDING" %}
+                <label
+                    for="confirm-toggle"
+                    hx-get="{{ url_for('booking_cancel_confirm', booking_id=b.id, week_offset=week_offset) }}"
+                    hx-target="#confirm-content"
+                    title="Cancel booking"
+                    class="relative z-20 shrink-0 cursor-pointer rounded px-1 font-bold hover:bg-black/10"
+                >&times;</label>
+                {% endif %}
             </div>
             {% endfor %}
 

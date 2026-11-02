@@ -1,7 +1,10 @@
 from datetime import datetime
 
+import pytest
+
 from app import db
 from app.models.booking import Booking
+from app.services.booking import cancel_booking, get_booking
 from tests.factories import booking_payload
 from tests.helpers import assert_status
 
@@ -26,21 +29,24 @@ def _insert_booking_directly(**overrides):
     return booking
 
 
-def test_create_with_unknown_requester_id_returns_422(client):
+def test_create_with_unknown_requester_id_returns_422(client, login_as):
+    login_as("REQUESTER")
     response = client.post("/api/bookings/", json=booking_payload(requester_id=999999))
 
     assert_status(response, 422)
     assert "999999" in response.json["message"]
 
 
-def test_create_with_unknown_room_id_returns_422(client):
+def test_create_with_unknown_room_id_returns_422(client, login_as):
+    login_as("REQUESTER")
     response = client.post("/api/bookings/", json=booking_payload(room_id=999999))
 
     assert_status(response, 422)
     assert "999999" in response.json["message"]
 
 
-def test_patch_requester_id_same_value_returns_422(client):
+def test_patch_requester_id_same_value_returns_422(client, login_as):
+    login_as("REQUESTER")
     created = _create_booking(client)
 
     response = client.patch(
@@ -53,7 +59,8 @@ def test_patch_requester_id_same_value_returns_422(client):
     assert "modified" in response.json["message"]
 
 
-def test_patch_requester_id_different_value_returns_422(client):
+def test_patch_requester_id_different_value_returns_422(client, login_as):
+    login_as("REQUESTER")
     created = _create_booking(client)
     other_requester_id = booking_payload()["requester_id"]
 
@@ -67,7 +74,8 @@ def test_patch_requester_id_different_value_returns_422(client):
     assert "modified" in response.json["message"]
 
 
-def test_create_with_end_date_before_start_date_returns_422(client):
+def test_create_with_end_date_before_start_date_returns_422(client, login_as):
+    login_as("REQUESTER")
     response = client.post(
         "/api/bookings/",
         json=booking_payload(
@@ -78,7 +86,8 @@ def test_create_with_end_date_before_start_date_returns_422(client):
     assert_status(response, 422)
 
 
-def test_create_with_end_date_equal_start_date_returns_422(client):
+def test_create_with_end_date_equal_start_date_returns_422(client, login_as):
+    login_as("REQUESTER")
     response = client.post(
         "/api/bookings/",
         json=booking_payload(
@@ -89,7 +98,8 @@ def test_create_with_end_date_equal_start_date_returns_422(client):
     assert_status(response, 422)
 
 
-def test_patch_end_date_before_existing_start_date_returns_422(client):
+def test_patch_end_date_before_existing_start_date_returns_422(client, login_as):
+    login_as("REQUESTER")
     created = _create_booking(client)
 
     response = client.patch(
@@ -104,7 +114,8 @@ def test_patch_end_date_before_existing_start_date_returns_422(client):
     assert get_response.json["end_date"] == created["end_date"]
 
 
-def test_patch_start_date_after_existing_end_date_returns_422(client):
+def test_patch_start_date_after_existing_end_date_returns_422(client, login_as):
+    login_as("REQUESTER")
     created = _create_booking(client)
 
     response = client.patch(
@@ -119,7 +130,8 @@ def test_patch_start_date_after_existing_end_date_returns_422(client):
     assert get_response.json["end_date"] == created["end_date"]
 
 
-def test_patch_both_dates_to_new_valid_range_returns_200(client):
+def test_patch_both_dates_to_new_valid_range_returns_200(client, login_as):
+    login_as("REQUESTER")
     created = _create_booking(client)
 
     response = client.patch(
@@ -132,7 +144,8 @@ def test_patch_both_dates_to_new_valid_range_returns_200(client):
     assert response.json["end_date"] == "2027-06-01T09:00:00"
 
 
-def test_create_with_start_date_in_past_returns_422(client):
+def test_create_with_start_date_in_past_returns_422(client, login_as):
+    login_as("REQUESTER")
     response = client.post(
         "/api/bookings/",
         json=booking_payload(start_date="2020-01-01T09:00:00"),
@@ -141,7 +154,8 @@ def test_create_with_start_date_in_past_returns_422(client):
     assert_status(response, 422)
 
 
-def test_patch_start_date_to_past_returns_422(client):
+def test_patch_start_date_to_past_returns_422(client, login_as):
+    login_as("REQUESTER")
     created = _create_booking(client)
 
     response = client.patch(
@@ -155,7 +169,10 @@ def test_patch_start_date_to_past_returns_422(client):
     assert get_response.json["start_date"] == created["start_date"]
 
 
-def test_patch_unrelated_field_on_booking_with_past_start_date_succeeds(client):
+def test_patch_unrelated_field_on_booking_with_past_start_date_succeeds(
+    client, login_as
+):
+    login_as("REQUESTER")
     booking = _insert_booking_directly(
         start_date="2020-01-01T09:00:00",
         end_date="2020-02-01T09:00:00",
@@ -168,7 +185,8 @@ def test_patch_unrelated_field_on_booking_with_past_start_date_succeeds(client):
     assert response.json["state"] == "FINISHED"
 
 
-def test_create_overlapping_booking_same_room_returns_422(client):
+def test_create_overlapping_booking_same_room_returns_422(client, login_as):
+    login_as("REQUESTER")
     first = _create_booking(
         client, start_date="2027-01-01T09:00:00", end_date="2027-02-01T09:00:00"
     )
@@ -186,7 +204,8 @@ def test_create_overlapping_booking_same_room_returns_422(client):
     assert str(first["id"]) in response.json["message"]
 
 
-def test_create_overlapping_booking_different_rooms_succeeds(client):
+def test_create_overlapping_booking_different_rooms_succeeds(client, login_as):
+    login_as("REQUESTER")
     first = _create_booking(
         client, start_date="2027-01-01T09:00:00", end_date="2027-02-01T09:00:00"
     )
@@ -202,7 +221,8 @@ def test_create_overlapping_booking_different_rooms_succeeds(client):
     assert response.json["room_id"] != first["room_id"]
 
 
-def test_create_overlapping_with_no_show_booking_succeeds(client):
+def test_create_overlapping_with_no_show_booking_succeeds(client, login_as):
+    login_as("REQUESTER")
     first = _create_booking(
         client,
         state="NO_SHOW",
@@ -222,7 +242,8 @@ def test_create_overlapping_with_no_show_booking_succeeds(client):
     assert_status(response, 201)
 
 
-def test_create_overlapping_with_finished_booking_succeeds(client):
+def test_create_overlapping_with_finished_booking_succeeds(client, login_as):
+    login_as("REQUESTER")
     first = _create_booking(
         client,
         state="FINISHED",
@@ -242,7 +263,8 @@ def test_create_overlapping_with_finished_booking_succeeds(client):
     assert_status(response, 201)
 
 
-def test_create_touching_boundary_bookings_same_room_succeeds(client):
+def test_create_touching_boundary_bookings_same_room_succeeds(client, login_as):
+    login_as("REQUESTER")
     first = _create_booking(
         client, start_date="2027-01-01T09:00:00", end_date="2027-02-01T09:00:00"
     )
@@ -259,7 +281,8 @@ def test_create_touching_boundary_bookings_same_room_succeeds(client):
     assert_status(response, 201)
 
 
-def test_patch_dates_to_collide_with_other_booking_returns_422(client):
+def test_patch_dates_to_collide_with_other_booking_returns_422(client, login_as):
+    login_as("REQUESTER")
     first = _create_booking(
         client, start_date="2027-01-01T09:00:00", end_date="2027-02-01T09:00:00"
     )
@@ -283,7 +306,8 @@ def test_patch_dates_to_collide_with_other_booking_returns_422(client):
     assert get_response.json["end_date"] == second["end_date"]
 
 
-def test_patch_state_to_live_colliding_with_other_booking_returns_422(client):
+def test_patch_state_to_live_colliding_with_other_booking_returns_422(client, login_as):
+    login_as("REQUESTER")
     first = _create_booking(
         client, start_date="2027-01-01T09:00:00", end_date="2027-02-01T09:00:00"
     )
@@ -302,3 +326,81 @@ def test_patch_state_to_live_colliding_with_other_booking_returns_422(client):
 
     get_response = client.get(f"/api/bookings/{second['id']}/")
     assert get_response.json["state"] == "NO_SHOW"
+
+
+def test_cancel_booking_deletes_pending_booking(client):
+    booking = _insert_booking_directly(state="PENDING")
+
+    cancel_booking(booking)
+
+    assert get_booking(booking.id) is None
+
+
+def test_cancel_booking_raises_on_non_pending_state(client):
+    booking = _insert_booking_directly(state="ACTIVE")
+
+    with pytest.raises(ValueError):
+        cancel_booking(booking)
+
+    reloaded = get_booking(booking.id)
+    assert reloaded is not None
+    assert reloaded.state == "ACTIVE"
+
+
+def test_requester_can_cancel_own_pending_booking(client, login_as):
+    requester = login_as("REQUESTER")
+    created = _create_booking(client, requester_id=requester.id)
+
+    response = client.delete(f"/bookings/{created['id']}")
+
+    assert_status(response, 200)
+    get_response = client.get(f"/api/bookings/{created['id']}/")
+    assert_status(get_response, 404)
+
+
+def test_requester_cannot_cancel_own_active_booking(client, login_as):
+    requester = login_as("REQUESTER")
+    booking = _insert_booking_directly(requester_id=requester.id, state="ACTIVE")
+
+    response = client.delete(f"/bookings/{booking.id}")
+
+    assert_status(response, 200)
+    assert "pending" in response.get_data(as_text=True).lower()
+    reloaded = get_booking(booking.id)
+    assert reloaded is not None
+    assert reloaded.state == "ACTIVE"
+
+
+def test_requester_cannot_cancel_another_requesters_booking(client, login_as):
+    login_as("REQUESTER")
+    other_booking = _insert_booking_directly(state="PENDING")
+
+    response = client.delete(f"/bookings/{other_booking.id}")
+
+    assert_status(response, 403)
+    reloaded = get_booking(other_booking.id)
+    assert reloaded is not None
+    assert reloaded.state == "PENDING"
+
+
+def test_admin_can_cancel_another_requesters_pending_booking(client, login_as):
+    login_as("ADMIN")
+    other_booking = _insert_booking_directly(state="PENDING")
+
+    response = client.delete(f"/bookings/{other_booking.id}")
+
+    assert_status(response, 200)
+    assert get_booking(other_booking.id) is None
+
+
+def test_admin_bypasses_ownership_but_not_pending_state_rule(client, login_as):
+    login_as("ADMIN")
+    other_booking = _insert_booking_directly(state="ACTIVE")
+
+    response = client.delete(f"/bookings/{other_booking.id}")
+
+    assert_status(response, 200)
+    assert "pending" in response.get_data(as_text=True).lower()
+    reloaded = get_booking(other_booking.id)
+    assert reloaded is not None
+    assert reloaded.state == "ACTIVE"

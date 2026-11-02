@@ -1,0 +1,24 @@
+<div class="bg-white rounded-md shadow-lg p-6 w-full max-w-md">
+    <h3 class="text-lg font-semibold text-gray-800 mb-4">Cancel Booking</h3>
+    <p class="text-sm text-gray-600 mb-6">
+        Cancel this booking for <strong>{{ room.code }}</strong>
+        ({{ booking.start_date.strftime("%Y-%m-%d %H:%M") }}&ndash;{{ booking.end_date.strftime("%H:%M") }})?
+        This cannot be undone.
+    </p>
+    <div class="flex justify-end gap-2">
+        <label
+            for="confirm-toggle"
+            class="cursor-pointer px-3 py-2 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-100"
+        >
+            Keep booking
+        </label>
+        <button
+            hx-delete="{{ url_for('booking_cancel', booking_id=booking.id, week_offset=week_offset) }}"
+            hx-target="#confirm-content"
+            hx-swap="innerHTML"
+            class="bg-red-600 text-white text-sm font-medium px-3 py-2 rounded-md hover:bg-red-700"
+        >
+            Cancel booking
+        </button>
+    </div>
+</div>

@@ -3,7 +3,9 @@ from datetime import datetime
 from flask import abort, render_template, request
 from flask_login import current_user
 
-from app.services.booking import create_booking
+from app.services.audit import log_action
+from app.services.auth import role_required
+from app.services.booking import cancel_booking, create_booking, get_booking
 from app.services.calendar import build_slot_picker, build_week_view
 from app.services.feature import list_features
 from app.services.nav import can_access_module, grouped_visible_nav_items
@@ -127,7 +129,7 @@ def register_booking_routes(app):
             return _render_form("This slot is no longer available.", 422)
 
         try:
-            create_booking(
+            booking = create_booking(
                 {
                     "start_date": picker["selected_start"],
                     "end_date": picker["end_time"],
@@ -139,6 +141,12 @@ def register_booking_routes(app):
         except ValueError as err:
             return _render_form(str(err), 422)
 
+        log_action(
+            current_user.id,
+            "booking.create",
+            entity_type="booking",
+            entity_id=booking.id,
+        )
         calendar = build_week_view(room_id, week_offset, current_user.id)
         return render_template(
             "partials/booking/booking_success.html",
@@ -146,3 +154,55 @@ def register_booking_routes(app):
             week_offset=week_offset,
             **calendar,
         ) + render_toast("success", f"Booking created for {room.code}.")
+
+    @app.get("/bookings/<int:booking_id>/delete/confirm")
+    @htmx_only
+    @role_required("REQUESTER")
+    def booking_cancel_confirm(booking_id):
+        booking = get_booking(booking_id)
+        if booking is None:
+            abort(404)
+        if current_user.role != "ADMIN" and booking.requester_id != current_user.id:
+            abort(403)
+        room = get_room(booking.room_id)
+        week_offset = request.args.get("week_offset", default=0, type=int)
+        return render_template(
+            "partials/booking/delete_confirm.html",
+            booking=booking,
+            room=room,
+            week_offset=week_offset,
+        )
+
+    @app.delete("/bookings/<int:booking_id>")
+    @role_required("REQUESTER")
+    def booking_cancel(booking_id):
+        booking = get_booking(booking_id)
+        if booking is None:
+            abort(404)
+        if current_user.role != "ADMIN" and booking.requester_id != current_user.id:
+            abort(403)
+        room = get_room(booking.room_id)
+        week_offset = request.args.get("week_offset", default=0, type=int)
+
+        def _render_result(level, message):
+            calendar = build_week_view(room.id, week_offset, current_user.id)
+            return render_template(
+                "partials/booking/delete_success.html",
+                room=room,
+                week_offset=week_offset,
+                **calendar,
+            ) + render_toast(level, message)
+
+        booking_id_value = booking.id
+        try:
+            cancel_booking(booking)
+        except ValueError as err:
+            return _render_result("error", str(err))
+
+        log_action(
+            current_user.id,
+            "booking.cancel",
+            entity_type="booking",
+            entity_id=booking_id_value,
+        )
+        return _render_result("success", "Booking cancelled.")

@@ -204,6 +204,8 @@ def build_week_view(room_id, week_offset, current_user_id):
             is_own = b.requester_id == current_user_id
             booking_blocks.append(
                 {
+                    "id": b.id,
+                    "state": b.state,
                     "top_pct": _pct_of_day(s, day_start, day_end),
                     "height_pct": _pct_of_day(e, day_start, day_end)
                     - _pct_of_day(s, day_start, day_end),
