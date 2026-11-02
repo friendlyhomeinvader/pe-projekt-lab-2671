@@ -22,6 +22,27 @@ class ApiContract:
     schema_out: type
     payload_factory: Callable[..., dict]
     unique_fields: tuple[str, ...] = field(default_factory=tuple)
+    required_role: str | None = None
+
+
+def _authed(contract, client, login_as):
+    """Log `client` in as a user satisfying `contract.required_role`, if any."""
+    if contract.required_role:
+        login_as(contract.required_role)
+    return client
+
+
+def _preexisting_ids(contract, client, login_as):
+    """IDs already present in this resource's collection purely because of the
+    authentication required to test it (e.g. the admin's own row, when the
+    resource under test IS users). Empty for every resource other than the
+    actor's own."""
+    if not contract.required_role:
+        return client, set()
+
+    actor = login_as(contract.required_role)
+    response = client.get(_detail_url(contract, actor.id))
+    return client, ({actor.id} if response.status_code == 200 else set())
 
 
 def _detail_url(contract, resource_id):
@@ -202,16 +223,18 @@ def unique_field_params(contracts):
     return params
 
 
-def test_list_empty_returns_empty_list(client, contract):
+def test_list_empty_returns_empty_list(client, contract, login_as):
+    client, baseline_ids = _preexisting_ids(contract, client, login_as)
     response = client.get(contract.url)
 
     assert_status(response, 200)
-    assert response.json == []
+    assert {item["id"] for item in response.json} == baseline_ids
 
 
 def test_create_valid_returns_schema_out_fields_without_load_only_fields(
-    client, contract
+    client, contract, login_as
 ):
+    client = _authed(contract, client, login_as)
     payload = contract.payload_factory()
 
     body = _create(client, contract, payload)
@@ -223,7 +246,8 @@ def test_create_valid_returns_schema_out_fields_without_load_only_fields(
             assert body[field_name] == value
 
 
-def test_list_after_create_returns_all_created(client, contract):
+def test_list_after_create_returns_all_created(client, contract, login_as):
+    client, baseline_ids = _preexisting_ids(contract, client, login_as)
     first, second = _two_payloads(contract)
     created_ids = {
         _create(client, contract, first)["id"],
@@ -233,10 +257,11 @@ def test_list_after_create_returns_all_created(client, contract):
     response = client.get(contract.url)
 
     assert_status(response, 200)
-    assert {item["id"] for item in response.json} == created_ids
+    assert {item["id"] for item in response.json} == created_ids | baseline_ids
 
 
-def test_get_by_id_returns_matching_resource(client, contract):
+def test_get_by_id_returns_matching_resource(client, contract, login_as):
+    client = _authed(contract, client, login_as)
     created = _create(client, contract)
 
     response = client.get(_detail_url(contract, created["id"]))
@@ -245,13 +270,15 @@ def test_get_by_id_returns_matching_resource(client, contract):
     assert response.json == created
 
 
-def test_get_unknown_id_returns_404(client, contract):
+def test_get_unknown_id_returns_404(client, contract, login_as):
+    client = _authed(contract, client, login_as)
     response = client.get(_detail_url(contract, UNKNOWN_ID))
 
     assert_status(response, 404)
 
 
-def test_patch_partial_update_changes_only_target_field(client, contract):
+def test_patch_partial_update_changes_only_target_field(client, contract, login_as):
+    client = _authed(contract, client, login_as)
     field_name = _patchable_field_name(contract)
     created = _create(client, contract)
     new_value = _alternate_value(contract, field_name, "patched")
@@ -266,7 +293,8 @@ def test_patch_partial_update_changes_only_target_field(client, contract):
     assert_only_fields_changed(created, body, field_name)
 
 
-def test_patch_unknown_id_returns_404(client, contract):
+def test_patch_unknown_id_returns_404(client, contract, login_as):
+    client = _authed(contract, client, login_as)
     field_name = _patchable_field_name(contract)
     new_value = _alternate_value(contract, field_name, "patched")
 
@@ -277,7 +305,8 @@ def test_patch_unknown_id_returns_404(client, contract):
     assert_status(response, 404)
 
 
-def test_delete_returns_204_then_404_on_get(client, contract):
+def test_delete_returns_204_then_404_on_get(client, contract, login_as):
+    client = _authed(contract, client, login_as)
     created = _create(client, contract)
 
     delete_response = client.delete(_detail_url(contract, created["id"]))
@@ -287,13 +316,15 @@ def test_delete_returns_204_then_404_on_get(client, contract):
     assert_status(get_response, 404)
 
 
-def test_delete_unknown_id_returns_404(client, contract):
+def test_delete_unknown_id_returns_404(client, contract, login_as):
+    client = _authed(contract, client, login_as)
     response = client.delete(_detail_url(contract, UNKNOWN_ID))
 
     assert_status(response, 404)
 
 
-def check_required_field_missing_returns_422(client, contract, field_name):
+def check_required_field_missing_returns_422(client, contract, field_name, login_as):
+    client = _authed(contract, client, login_as)
     payload = contract.payload_factory()
     del payload[field_name]
 
@@ -302,7 +333,10 @@ def check_required_field_missing_returns_422(client, contract, field_name):
     assert_status(response, 422)
 
 
-def check_invalid_value_returns_422(client, contract, field_name, invalid_value):
+def check_invalid_value_returns_422(
+    client, contract, field_name, invalid_value, login_as
+):
+    client = _authed(contract, client, login_as)
     payload = contract.payload_factory(**{field_name: invalid_value})
 
     response = client.post(contract.url, json=payload)
@@ -310,7 +344,10 @@ def check_invalid_value_returns_422(client, contract, field_name, invalid_value)
     assert_status(response, 422)
 
 
-def check_create_duplicate_unique_field_returns_409(client, contract, field_name):
+def check_create_duplicate_unique_field_returns_409(
+    client, contract, field_name, login_as
+):
+    client = _authed(contract, client, login_as)
     first, second = _collision_payloads(contract, field_name)
 
     _create(client, contract, first)
@@ -319,7 +356,10 @@ def check_create_duplicate_unique_field_returns_409(client, contract, field_name
     assert_status(response, 409)
 
 
-def check_patch_duplicate_unique_field_returns_409(client, contract, field_name):
+def check_patch_duplicate_unique_field_returns_409(
+    client, contract, field_name, login_as
+):
+    client = _authed(contract, client, login_as)
     first, second = _two_payloads(contract)
     created_first = _create(client, contract, first)
     created_second = _create(client, contract, second)
