@@ -5,6 +5,7 @@ from sqlalchemy.exc import SQLAlchemyError
 
 from app import db
 from app.schemas.key import KeyIn
+from app.services.audit import log_action
 from app.services.auth import role_required
 from app.services.key import create_key, delete_key, get_key, list_keys, update_key
 from app.services.key_authorization import (
@@ -143,6 +144,13 @@ def register_key_routes(app):
                 status=422,
             )
 
+        log_action(
+            current_user.id if current_user.is_authenticated else None,
+            "key.create",
+            entity_type="key",
+            entity_id=key.id,
+            details=key.tag,
+        )
         return _key_save_success(key, "created")
 
     @app.patch("/keys/<int:key_id>")
@@ -207,6 +215,13 @@ def register_key_routes(app):
                 status=422,
             )
 
+        log_action(
+            current_user.id if current_user.is_authenticated else None,
+            "key.update",
+            entity_type="key",
+            entity_id=key.id,
+            details=key.tag,
+        )
         return _key_save_success(key, "updated")
 
     @app.get("/keys/<int:key_id>/delete/confirm")
@@ -225,6 +240,7 @@ def register_key_routes(app):
         if key is None:
             abort(404)
         tag = key.tag
+        key_id = key.id
         try:
             delete_key(key)
         except SQLAlchemyError:
@@ -234,6 +250,13 @@ def register_key_routes(app):
                 + render_toast("error", "Failed to delete key. Please try again."),
                 500,
             )
+        log_action(
+            current_user.id if current_user.is_authenticated else None,
+            "key.delete",
+            entity_type="key",
+            entity_id=key_id,
+            details=tag,
+        )
         return render_template(
             "partials/keys/delete_success.html", keys=list_keys()
         ) + render_toast("success", f"Key {tag} deleted.")
@@ -308,6 +331,21 @@ def register_key_routes(app):
                 + render_template("partials/_close_confirm.html")
                 + render_toast("error", str(err)),
                 422,
+            )
+
+        for authorization in granted:
+            log_action(
+                current_user.id,
+                "key_authorization.grant",
+                entity_type="key_authorization",
+                entity_id=authorization.id,
+            )
+        for authorization in revoked:
+            log_action(
+                current_user.id,
+                "key_authorization.revoke",
+                entity_type="key_authorization",
+                entity_id=authorization.id,
             )
 
         return (
