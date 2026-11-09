@@ -7,7 +7,7 @@ def create_isolated_app(tmp_path, monkeypatch):
     db_path = tmp_path / "test.db"
     monkeypatch.setenv("DATABASE_URL", f"sqlite:///{db_path.as_posix()}")
 
-    return create_app()
+    return create_app(start_background_jobs=False)
 
 
 def assert_database_is_isolated(flask_app):
