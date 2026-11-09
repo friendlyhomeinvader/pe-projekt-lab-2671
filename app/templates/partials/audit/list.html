@@ -1,0 +1,36 @@
+<div>
+    <div class="flex items-center justify-between mb-4">
+        <h2 class="text-xl font-semibold text-gray-800">Reports / Audit</h2>
+    </div>
+
+    <table class="w-full text-sm text-left bg-white rounded-md shadow overflow-hidden">
+        <thead class="bg-gray-100 text-gray-600 uppercase text-xs">
+            <tr>
+                <th class="px-4 py-2">Time</th>
+                <th class="px-4 py-2">Actor</th>
+                <th class="px-4 py-2">Action</th>
+                <th class="px-4 py-2">Entity</th>
+                <th class="px-4 py-2">Details</th>
+            </tr>
+        </thead>
+        <tbody class="divide-y divide-gray-100">
+            {% for log in logs %}
+            <tr>
+                <td class="px-4 py-2 whitespace-nowrap">{{ log.occurred_at.strftime("%Y-%m-%d %H:%M") }}</td>
+                <td class="px-4 py-2">{{ log.actor.display_name if log.actor else "System" }}</td>
+                <td class="px-4 py-2">{{ log.action }}</td>
+                <td class="px-4 py-2">
+                    {% if log.entity_type %}
+                    {{ log.entity_type }}{% if log.entity_id %}#{{ log.entity_id }}{% endif %}
+                    {% endif %}
+                </td>
+                <td class="px-4 py-2 text-gray-600">{{ log.details or "" }}</td>
+            </tr>
+            {% else %}
+            <tr>
+                <td class="px-4 py-2 text-gray-500" colspan="5">No audit log entries yet.</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
