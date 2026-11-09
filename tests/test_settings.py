@@ -1,14 +1,13 @@
 import itertools
 from datetime import datetime, timedelta, timezone
 
-from app.services.no_show import apply_no_shows
-
 from app import db
 from app.models.audit_log import AuditLog
 from app.models.booking import Booking
 from app.models.preferences import Preferences
 from app.models.room import Room
 from app.models.user import User
+from app.services.no_show import apply_no_shows
 from app.services.preferences import (
     DEFAULT_NO_SHOW_GRACE_MINUTES,
     get_no_show_grace_minutes,
