@@ -1,0 +1,61 @@
+<div>
+    <div class="flex items-center justify-between mb-4">
+        <h2 class="text-xl font-semibold text-gray-800">Maintenance Slots</h2>
+        <label
+            for="modal-toggle"
+            hx-get="/maintenance-slots/new"
+            hx-target="#modal-content"
+            class="cursor-pointer inline-block bg-blue-600 text-white text-sm font-medium px-3 py-2 rounded-md hover:bg-blue-700"
+        >
+            + New Maintenance Slot
+        </label>
+    </div>
+
+    <table class="w-full text-sm text-left bg-white rounded-md shadow overflow-hidden">
+        <thead class="bg-gray-100 text-gray-600 uppercase text-xs">
+            <tr>
+                <th class="px-4 py-2">Room</th>
+                <th class="px-4 py-2">Start</th>
+                <th class="px-4 py-2">End</th>
+                <th class="px-4 py-2">Reason</th>
+                <th class="px-4 py-2">Created by</th>
+                <th class="px-4 py-2"></th>
+            </tr>
+        </thead>
+        <tbody class="divide-y divide-gray-100">
+            {% for slot in slots %}
+            <tr>
+                <td class="px-4 py-2">
+                    <span class="inline-block bg-gray-100 text-gray-700 text-xs px-2 py-0.5 rounded-full">{{ slot.room.code }}</span>
+                </td>
+                <td class="px-4 py-2">{{ slot.start_date.strftime("%Y-%m-%d %H:%M") }}</td>
+                <td class="px-4 py-2">{{ slot.end_date.strftime("%Y-%m-%d %H:%M") }}</td>
+                <td class="px-4 py-2">{{ slot.reason or "" }}</td>
+                <td class="px-4 py-2">{{ slot.created_by.display_name if slot.created_by else "" }}</td>
+                <td class="px-4 py-2 text-right space-x-2">
+                    <label
+                        for="modal-toggle"
+                        hx-get="/maintenance-slots/{{ slot.id }}/edit"
+                        hx-target="#modal-content"
+                        class="cursor-pointer text-blue-600 hover:underline"
+                    >
+                        Edit
+                    </label>
+                    <label
+                        for="confirm-toggle"
+                        hx-get="/maintenance-slots/{{ slot.id }}/delete/confirm"
+                        hx-target="#confirm-content"
+                        class="cursor-pointer text-red-600 hover:underline"
+                    >
+                        Delete
+                    </label>
+                </td>
+            </tr>
+            {% else %}
+            <tr>
+                <td class="px-4 py-2 text-gray-500" colspan="6">No maintenance slots yet.</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
