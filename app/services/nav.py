@@ -24,8 +24,8 @@ NAV_ITEMS = [
         "allowed_roles": ("ADMIN",),
     },
     {
-        "slug": "booking-management",
-        "label": "Booking Management",
+        "slug": "issue-management",
+        "label": "Issue Mgmt",
         "allowed_roles": ("ADMIN",),
     },
     {

@@ -3,6 +3,18 @@ from datetime import datetime, timezone
 from app import db
 from app.models.issue_ticket import IssueTicket
 
+ISSUE_TICKET_STATE_LABELS = {
+    "OPEN": "Open",
+    "IN_PROGRESS": "In progress",
+    "RESOLVED": "Resolved",
+}
+
+ISSUE_TICKET_STATE_STYLES = {
+    "OPEN": "bg-red-100 border border-red-300 text-red-700",
+    "IN_PROGRESS": "bg-amber-100 border border-amber-300 text-amber-700",
+    "RESOLVED": "bg-green-100 border border-green-300 text-green-700",
+}
+
 
 def list_issue_tickets():
     return IssueTicket.query.order_by(IssueTicket.created_at.desc()).all()
@@ -37,5 +49,13 @@ def resolve_issue_ticket(ticket, resolved_by_id):
     ticket.state = "RESOLVED"
     ticket.resolved_by_id = resolved_by_id
     ticket.resolved_at = datetime.now(timezone.utc).replace(tzinfo=None)
+    db.session.commit()
+    return ticket
+
+
+def mark_issue_ticket_in_progress(ticket):
+    if ticket.state == "RESOLVED":
+        raise ValueError("Ticket is already resolved.")
+    ticket.state = "IN_PROGRESS"
     db.session.commit()
     return ticket

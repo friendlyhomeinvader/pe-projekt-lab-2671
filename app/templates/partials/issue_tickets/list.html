@@ -1,0 +1,65 @@
+<div>
+    <h3 class="text-lg font-semibold text-gray-800 mb-4">Issue Tickets</h3>
+
+    <table class="w-full text-sm text-left bg-white rounded-md shadow overflow-hidden">
+        <thead class="bg-gray-100 text-gray-600 uppercase text-xs">
+            <tr>
+                <th class="px-4 py-2">Room</th>
+                <th class="px-4 py-2">Key</th>
+                <th class="px-4 py-2">Description</th>
+                <th class="px-4 py-2">Reported by</th>
+                <th class="px-4 py-2">State</th>
+                <th class="px-4 py-2">Created</th>
+                <th class="px-4 py-2"></th>
+            </tr>
+        </thead>
+        <tbody class="divide-y divide-gray-100">
+            {% for ticket in tickets %}
+            <tr>
+                <td class="px-4 py-2">
+                    {% if ticket.room %}
+                    <span class="inline-block bg-gray-100 text-gray-700 text-xs px-2 py-0.5 rounded-full">{{ ticket.room.code }}</span>
+                    {% endif %}
+                </td>
+                <td class="px-4 py-2">
+                    {% if ticket.key %}
+                    <span class="inline-block bg-gray-100 text-gray-700 text-xs px-2 py-0.5 rounded-full">{{ ticket.key.tag }}</span>
+                    {% endif %}
+                </td>
+                <td class="px-4 py-2">{{ ticket.description }}</td>
+                <td class="px-4 py-2">{{ ticket.reported_by.display_name if ticket.reported_by else "" }}</td>
+                <td class="px-4 py-2">
+                    <span class="inline-block text-xs px-2 py-0.5 rounded-full {{ state_styles[ticket.state] }}">{{ state_labels[ticket.state] }}</span>
+                </td>
+                <td class="px-4 py-2">{{ ticket.created_at.strftime("%Y-%m-%d %H:%M") }}</td>
+                <td class="px-4 py-2 text-right space-x-2">
+                    {% if ticket.state != "RESOLVED" %}
+                    <label
+                        for="confirm-toggle"
+                        hx-get="/issue-tickets/{{ ticket.id }}/resolve/confirm"
+                        hx-target="#confirm-content"
+                        class="cursor-pointer text-green-600 hover:underline"
+                    >
+                        Resolve
+                    </label>
+                    {% endif %}
+                    {% if ticket.state == "OPEN" and ticket.room_id %}
+                    <label
+                        for="modal-toggle"
+                        hx-get="/issue-tickets/{{ ticket.id }}/convert/form"
+                        hx-target="#modal-content"
+                        class="cursor-pointer text-blue-600 hover:underline"
+                    >
+                        Convert to maintenance
+                    </label>
+                    {% endif %}
+                </td>
+            </tr>
+            {% else %}
+            <tr>
+                <td class="px-4 py-2 text-gray-500" colspan="7">No issue tickets yet.</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
