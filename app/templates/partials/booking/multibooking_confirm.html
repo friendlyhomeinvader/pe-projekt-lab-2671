@@ -1,0 +1,51 @@
+<div class="bg-white rounded-md shadow-lg p-6 w-96">
+    <h3 class="text-lg font-semibold text-gray-800 mb-2">Confirm multibooking</h3>
+    <p class="text-gray-600 text-sm mb-4">
+        This will create {{ occurrences|length }} bookings for Room {{ room.code }}, one per week:
+    </p>
+
+    <ul class="space-y-1 mb-6 max-h-56 overflow-y-auto text-sm">
+        {% for occ_start, occ_end in occurrences %}
+        <li class="border border-gray-200 rounded-md px-3 py-2">
+            {{ occ_start.strftime("%a, %Y-%m-%d") }} &middot; {{ occ_start.strftime("%H:%M") }}&ndash;{{ occ_end.strftime("%H:%M") }}
+        </li>
+        {% endfor %}
+    </ul>
+
+    <div class="flex justify-end gap-2">
+        <button
+            type="button"
+            hx-get="{{ url_for('booking_slot_new', room_id=room.id, row_start=row_start_iso, row_end=row_end_iso, gap_start=gap_start_iso, gap_end=gap_end_iso, week_offset=week_offset) }}"
+            hx-target="#modal-content"
+            hx-swap="innerHTML"
+            class="px-3 py-2 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-100"
+        >
+            Back
+        </button>
+        <form
+            hx-post="{{ url_for('booking_slot_create', room_id=room.id) }}"
+            hx-target="#modal-content"
+            hx-swap="innerHTML"
+        >
+            <input type="hidden" name="row_start" value="{{ row_start_iso }}">
+            <input type="hidden" name="row_end" value="{{ row_end_iso }}">
+            <input type="hidden" name="gap_start" value="{{ gap_start_iso }}">
+            <input type="hidden" name="gap_end" value="{{ gap_end_iso }}">
+            <input type="hidden" name="week_offset" value="{{ week_offset }}">
+            <input type="hidden" name="start" value="{{ start_iso }}">
+            <input type="hidden" name="slots" value="{{ slots }}">
+            <input type="hidden" name="multibooking" value="1">
+            <input type="hidden" name="extra_weeks" value="{{ extra_weeks }}">
+            <input type="hidden" name="confirm_multibooking" value="1">
+            {% for feature_id in selected_feature_ids %}
+            <input type="hidden" name="feature_ids" value="{{ feature_id }}">
+            {% endfor %}
+            <button
+                type="submit"
+                class="bg-blue-600 text-white text-sm font-medium px-3 py-2 rounded-md hover:bg-blue-700"
+            >
+                Confirm &amp; book {{ occurrences|length }} slots
+            </button>
+        </form>
+    </div>
+</div>

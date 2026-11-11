@@ -9,8 +9,10 @@ from app.models.room import Feature, Room
 from app.models.user import User
 from app.services.booking import (
     create_booking,
+    create_multibooking,
     missing_room_features,
     update_booking,
+    validate_multibooking,
 )
 from app.services.calendar import build_week_view
 from tests.factories import booking_payload
@@ -204,6 +206,49 @@ def test_missing_room_features_empty_when_booking_has_no_features(client):
     booking = create_booking(_booking_data(room.id, requester.id))
 
     assert missing_room_features(booking) == []
+
+
+def test_create_multibooking_applies_feature_ids_to_every_occurrence(client):
+    room = _create_room()
+    requester = _create_requester()
+    f1 = _create_feature()
+    f2 = _create_feature()
+
+    bookings = create_multibooking(
+        _booking_data(room.id, requester.id, feature_ids=[f1.id, f2.id]),
+        extra_weeks=3,
+    )
+
+    assert len(bookings) == 4
+    for booking in bookings:
+        assert {f.id for f in booking.features} == {f1.id, f2.id}
+
+
+def test_validate_multibooking_with_unknown_feature_id_raises_before_creation(client):
+    room = _create_room()
+    requester = _create_requester()
+
+    with pytest.raises(ValueError) as exc_info:
+        validate_multibooking(
+            _booking_data(room.id, requester.id, feature_ids=[999999]),
+            extra_weeks=3,
+        )
+
+    assert "999999" in str(exc_info.value)
+    assert Booking.query.count() == 0
+
+
+def test_create_multibooking_with_unknown_feature_id_creates_nothing(client):
+    room = _create_room()
+    requester = _create_requester()
+
+    with pytest.raises(ValueError):
+        create_multibooking(
+            _booking_data(room.id, requester.id, feature_ids=[999999]),
+            extra_weeks=3,
+        )
+
+    assert Booking.query.count() == 0
 
 
 def test_api_create_booking_with_feature_ids_returns_them(client, login_as):

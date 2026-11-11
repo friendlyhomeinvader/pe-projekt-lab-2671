@@ -1,4 +1,4 @@
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 
 from app import db
 from app.models.booking import Booking
@@ -7,6 +7,8 @@ from app.models.room import Feature, Room
 from app.models.user import User
 
 LIVE_STATES = ("PENDING", "ACTIVE")
+
+MAX_MULTIBOOKING_WEEKS = 13
 
 BOOKING_STATE_LABELS = {
     "PENDING": "Pending",
@@ -110,6 +112,58 @@ def _check_no_maintenance_conflict(room_id, start_date, end_date, state):
         raise ValueError(
             f"Room {room_id} is under maintenance from {slot.start_date} to {slot.end_date}."
         )
+
+
+def multibooking_dates(start_date, end_date, extra_weeks):
+    return [
+        (start_date + timedelta(weeks=i), end_date + timedelta(weeks=i))
+        for i in range(extra_weeks + 1)
+    ]
+
+
+def validate_multibooking(data, extra_weeks):
+    if not 1 <= extra_weeks <= MAX_MULTIBOOKING_WEEKS:
+        raise ValueError(f"extra_weeks must be between 1 and {MAX_MULTIBOOKING_WEEKS}.")
+    _resolve_requester(data["requester_id"])
+    _resolve_room(data["room_id"])
+    if data.get("feature_ids"):
+        _resolve_features(data["feature_ids"])
+
+    occurrences = multibooking_dates(data["start_date"], data["end_date"], extra_weeks)
+    _check_start_in_future(occurrences[0][0])
+    for occ_start, occ_end in occurrences:
+        _check_dates(occ_start, occ_end)
+        try:
+            _check_no_overlap(data["room_id"], occ_start, occ_end, data["state"])
+            _check_no_maintenance_conflict(
+                data["room_id"], occ_start, occ_end, data["state"]
+            )
+        except ValueError as err:
+            raise ValueError(f"{occ_start:%Y-%m-%d}: {err}") from err
+    return occurrences
+
+
+def create_multibooking(data, extra_weeks):
+    occurrences = validate_multibooking(data, extra_weeks)
+    features = (
+        _resolve_features(data["feature_ids"]) if data.get("feature_ids") else None
+    )
+
+    bookings = []
+    for occ_start, occ_end in occurrences:
+        booking = Booking(
+            start_date=occ_start,
+            end_date=occ_end,
+            state=data["state"],
+            requester_id=data["requester_id"],
+            room_id=data["room_id"],
+        )
+        if features:
+            booking.features = features
+        db.session.add(booking)
+        bookings.append(booking)
+    db.session.commit()
+    return bookings
 
 
 def create_booking(data):
