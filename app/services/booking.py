@@ -2,6 +2,7 @@ from datetime import datetime, timezone
 
 from app import db
 from app.models.booking import Booking
+from app.models.maintenance_slot import MaintenanceSlot
 from app.models.room import Room
 from app.models.user import User
 
@@ -84,12 +85,29 @@ def _check_no_overlap(room_id, start_date, end_date, state, exclude_booking_id=N
         )
 
 
+def _check_no_maintenance_conflict(room_id, start_date, end_date, state):
+    if state not in LIVE_STATES:
+        return
+    slot = MaintenanceSlot.query.filter(
+        MaintenanceSlot.room_id == room_id,
+        MaintenanceSlot.start_date < end_date,
+        start_date < MaintenanceSlot.end_date,
+    ).first()
+    if slot is not None:
+        raise ValueError(
+            f"Room {room_id} is under maintenance from {slot.start_date} to {slot.end_date}."
+        )
+
+
 def create_booking(data):
     _resolve_requester(data["requester_id"])
     _resolve_room(data["room_id"])
     _check_dates(data["start_date"], data["end_date"])
     _check_start_in_future(data["start_date"])
     _check_no_overlap(
+        data["room_id"], data["start_date"], data["end_date"], data["state"]
+    )
+    _check_no_maintenance_conflict(
         data["room_id"], data["start_date"], data["end_date"], data["state"]
     )
 
@@ -127,6 +145,9 @@ def update_booking(booking, data):
         effective_end,
         effective_state,
         exclude_booking_id=booking.id,
+    )
+    _check_no_maintenance_conflict(
+        effective_room_id, effective_start, effective_end, effective_state
     )
 
     for field in ("start_date", "end_date", "state"):

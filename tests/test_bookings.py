@@ -4,7 +4,10 @@ import pytest
 
 from app import db
 from app.models.booking import Booking
+from app.models.room import Room
+from app.models.user import User
 from app.services.booking import cancel_booking, get_booking
+from app.services.maintenance import create_maintenance_slot
 from tests.factories import booking_payload
 from tests.helpers import assert_status
 
@@ -13,6 +16,28 @@ def _create_booking(client, **overrides):
     response = client.post("/api/bookings/", json=booking_payload(**overrides))
     assert_status(response, 201)
     return response.json
+
+
+def _create_room_for_maintenance(**overrides):
+    defaults = {"code": "MAINT1", "location": "Building M", "capacity": 10}
+    defaults.update(overrides)
+    room = Room(**defaults)
+    db.session.add(room)
+    db.session.commit()
+    return room
+
+
+def _create_maintenance_admin():
+    user = User(
+        username="booking.maintenance.admin",
+        display_name="Booking Maintenance Admin",
+        email="booking.maintenance.admin@uni.su",
+        role="ADMIN",
+    )
+    user.set_password("Password123456!!")
+    db.session.add(user)
+    db.session.commit()
+    return user
 
 
 def _insert_booking_directly(**overrides):
@@ -261,6 +286,85 @@ def test_create_overlapping_with_finished_booking_succeeds(client, login_as):
     )
 
     assert_status(response, 201)
+
+
+def test_create_booking_overlapping_maintenance_slot_returns_422(client, login_as):
+    login_as("REQUESTER")
+    room = _create_room_for_maintenance()
+    admin = _create_maintenance_admin()
+    create_maintenance_slot(
+        {
+            "room_id": room.id,
+            "start_date": datetime.fromisoformat("2027-01-01T09:00:00"),
+            "end_date": datetime.fromisoformat("2027-01-02T09:00:00"),
+            "created_by_id": admin.id,
+        }
+    )
+
+    response = client.post(
+        "/api/bookings/",
+        json=booking_payload(
+            room_id=room.id,
+            start_date="2027-01-01T12:00:00",
+            end_date="2027-01-01T13:00:00",
+        ),
+    )
+
+    assert_status(response, 422)
+    assert "maintenance" in response.json["message"]
+
+
+def test_create_booking_outside_maintenance_window_succeeds(client, login_as):
+    login_as("REQUESTER")
+    room = _create_room_for_maintenance()
+    admin = _create_maintenance_admin()
+    create_maintenance_slot(
+        {
+            "room_id": room.id,
+            "start_date": datetime.fromisoformat("2027-01-01T09:00:00"),
+            "end_date": datetime.fromisoformat("2027-01-02T09:00:00"),
+            "created_by_id": admin.id,
+        }
+    )
+
+    response = client.post(
+        "/api/bookings/",
+        json=booking_payload(
+            room_id=room.id,
+            start_date="2027-02-01T09:00:00",
+            end_date="2027-02-01T10:00:00",
+        ),
+    )
+
+    assert_status(response, 201)
+
+
+def test_patch_booking_dates_into_maintenance_window_returns_422(client, login_as):
+    login_as("REQUESTER")
+    room = _create_room_for_maintenance()
+    admin = _create_maintenance_admin()
+    create_maintenance_slot(
+        {
+            "room_id": room.id,
+            "start_date": datetime.fromisoformat("2027-01-01T09:00:00"),
+            "end_date": datetime.fromisoformat("2027-01-02T09:00:00"),
+            "created_by_id": admin.id,
+        }
+    )
+    booking = _create_booking(
+        client,
+        room_id=room.id,
+        start_date="2027-02-01T09:00:00",
+        end_date="2027-02-01T10:00:00",
+    )
+
+    response = client.patch(
+        f"/api/bookings/{booking['id']}/",
+        json={"start_date": "2027-01-01T12:00:00", "end_date": "2027-01-01T13:00:00"},
+    )
+
+    assert_status(response, 422)
+    assert "maintenance" in response.json["message"]
 
 
 def test_create_touching_boundary_bookings_same_room_succeeds(client, login_as):

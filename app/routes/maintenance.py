@@ -5,7 +5,9 @@ from marshmallow import ValidationError
 from app.schemas.maintenance_slot import MaintenanceSlotIn
 from app.services.audit import log_action
 from app.services.auth import role_required
+from app.services.booking import BOOKING_STATE_LABELS, BOOKING_STATE_STYLES
 from app.services.maintenance import (
+    MaintenanceSlotConflict,
     create_maintenance_slot,
     delete_maintenance_slot,
     get_maintenance_slot,
@@ -38,6 +40,19 @@ def _maintenance_slot_save_success(slot, verb):
     return render_template(
         "partials/maintenance/save_success.html", slots=list_maintenance_slots()
     ) + render_toast("success", f"Maintenance slot for {slot.room.code} {verb}.")
+
+
+def _render_conflict_confirm(*, is_edit, values, bookings, slot_id=None):
+    kwargs = {
+        "is_edit": is_edit,
+        "values": values,
+        "bookings": bookings,
+        "state_labels": BOOKING_STATE_LABELS,
+        "state_styles": BOOKING_STATE_STYLES,
+    }
+    if slot_id is not None:
+        kwargs["slot_id"] = slot_id
+    return render_template("partials/maintenance/conflict_confirm.html", **kwargs)
 
 
 def register_maintenance_routes(app):
@@ -85,6 +100,10 @@ def register_maintenance_routes(app):
         data["created_by_id"] = current_user.id
         try:
             slot = create_maintenance_slot(data)
+        except MaintenanceSlotConflict as err:
+            return _render_conflict_confirm(
+                is_edit=False, values=request.form, bookings=err.bookings
+            )
         except ValueError as err:
             return _render_maintenance_slot_form(
                 is_edit=False,
@@ -93,12 +112,16 @@ def register_maintenance_routes(app):
                 status=422,
             )
 
+        details = f"room={slot.room.code}"
+        if slot.overridden_conflicts:
+            ids = ", ".join(f"#{b.id}" for b in slot.overridden_conflicts)
+            details += f", overrode {len(slot.overridden_conflicts)} conflicting booking(s): {ids}"
         log_action(
             current_user.id,
             "maintenance_slot.create",
             entity_type="maintenance_slot",
             entity_id=slot.id,
-            details=f"room={slot.room.code}",
+            details=details,
         )
         return _maintenance_slot_save_success(slot, "created")
 
@@ -122,6 +145,13 @@ def register_maintenance_routes(app):
 
         try:
             slot = update_maintenance_slot(slot, data)
+        except MaintenanceSlotConflict as err:
+            return _render_conflict_confirm(
+                is_edit=True,
+                slot_id=slot_id,
+                values=request.form,
+                bookings=err.bookings,
+            )
         except ValueError as err:
             return _render_maintenance_slot_form(
                 is_edit=True,
@@ -131,12 +161,16 @@ def register_maintenance_routes(app):
                 status=422,
             )
 
+        details = f"room={slot.room.code}"
+        if slot.overridden_conflicts:
+            ids = ", ".join(f"#{b.id}" for b in slot.overridden_conflicts)
+            details += f", overrode {len(slot.overridden_conflicts)} conflicting booking(s): {ids}"
         log_action(
             current_user.id,
             "maintenance_slot.update",
             entity_type="maintenance_slot",
             entity_id=slot.id,
-            details=f"room={slot.room.code}",
+            details=details,
         )
         return _maintenance_slot_save_success(slot, "updated")
 

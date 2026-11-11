@@ -8,6 +8,7 @@ class MaintenanceSlotIn(Schema):
     reason = fields.String(
         required=False, allow_none=True, validate=validators.Length(max=256)
     )
+    confirm_conflicts = fields.Boolean(required=False, load_default=False)
 
 
 class MaintenanceSlotOut(Schema):
