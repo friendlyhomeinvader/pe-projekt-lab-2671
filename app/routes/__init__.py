@@ -2,6 +2,7 @@ from app.routes.audit import register_audit_routes
 from app.routes.booking import register_booking_routes
 from app.routes.core import register_core_routes
 from app.routes.feature import register_feature_routes
+from app.routes.issue_management import register_issue_management_routes
 from app.routes.key import register_key_routes
 from app.routes.key_handling import register_key_handling_routes
 from app.routes.key_transaction import register_key_transaction_routes
@@ -23,3 +24,4 @@ def register_routes(app):
     register_booking_routes(app)
     register_settings_routes(app)
     register_maintenance_routes(app)
+    register_issue_management_routes(app)

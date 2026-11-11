@@ -10,6 +10,7 @@ from app.services.booking import (
     list_in_progress_and_upcoming_bookings,
     list_unresolved_bookings,
 )
+from app.services.issue_ticket import create_issue_ticket
 from app.services.key import get_key, list_authorized_keys
 from app.services.key_transaction import (
     eligible_bookings_for_key,
@@ -27,6 +28,33 @@ from app.services.key_transaction import (
 )
 from app.services.notify import render_toast
 from app.services.page import htmx_only
+
+
+def _maybe_raise_ticket(key, transaction):
+    if "raise_ticket" not in request.form:
+        return
+    description = (
+        request.form.get("room_condition_notes", "").strip()
+        or "Reported during key handling."
+    )
+    ticket = create_issue_ticket(
+        {
+            "room_id": transaction.booking.room_id
+            if transaction.booking
+            else key.room_id,
+            "key_id": key.id,
+            "reported_by_id": current_user.id,
+            "operator_id": current_user.id,
+            "description": description,
+        }
+    )
+    log_action(
+        current_user.id,
+        "issue_ticket.create",
+        entity_type="issue_ticket",
+        entity_id=ticket.id,
+        details=key.tag,
+    )
 
 
 def _issue_form_context_for_key(key, booking_id_raw):
@@ -125,6 +153,7 @@ def register_key_transaction_routes(app):
             entity_id=transaction.id,
             details=key.tag,
         )
+        _maybe_raise_ticket(key, transaction)
         keys = list_authorized_keys()
         return render_template(
             "partials/key_handling/_keys_list_oob.html",
@@ -168,6 +197,7 @@ def register_key_transaction_routes(app):
             entity_id=transaction.id,
             details=key.tag,
         )
+        _maybe_raise_ticket(key, transaction)
         keys = list_authorized_keys()
         return render_template(
             "partials/key_handling/_keys_list_oob.html",
@@ -259,6 +289,7 @@ def register_key_transaction_routes(app):
             entity_id=transaction.id,
             details=key.tag,
         )
+        _maybe_raise_ticket(key, transaction)
         return render_template(
             "partials/key_handling/_bookings_list_oob.html",
             booking_rows=list_in_progress_and_upcoming_bookings(),
@@ -301,6 +332,7 @@ def register_key_transaction_routes(app):
             entity_id=transaction.id,
             details=key.tag,
         )
+        _maybe_raise_ticket(key, transaction)
         return render_template(
             "partials/key_handling/_bookings_list_oob.html",
             booking_rows=list_in_progress_and_upcoming_bookings(),
