@@ -3,7 +3,7 @@ from datetime import datetime, timezone
 from app import db
 from app.models.booking import Booking
 from app.models.maintenance_slot import MaintenanceSlot
-from app.models.room import Room
+from app.models.room import Feature, Room
 from app.models.user import User
 
 LIVE_STATES = ("PENDING", "ACTIVE")
@@ -55,6 +55,19 @@ def _resolve_room(room_id):
     if room is None:
         raise ValueError(f"Unknown room id: {room_id}")
     return room
+
+
+def _resolve_features(feature_ids):
+    found = Feature.query.filter(Feature.id.in_(feature_ids)).all()
+    missing = set(feature_ids) - {f.id for f in found}
+    if missing:
+        raise ValueError(f"Unknown feature id(s): {sorted(missing)}")
+    return found
+
+
+def missing_room_features(booking):
+    room_feature_ids = {f.id for f in booking.room.features}
+    return [f for f in booking.features if f.id not in room_feature_ids]
 
 
 def _check_dates(start_date, end_date):
@@ -118,6 +131,8 @@ def create_booking(data):
         requester_id=data["requester_id"],
         room_id=data["room_id"],
     )
+    if data.get("feature_ids"):
+        booking.features = _resolve_features(data["feature_ids"])
     db.session.add(booking)
     db.session.commit()
     return booking
@@ -155,6 +170,8 @@ def update_booking(booking, data):
             setattr(booking, field, data[field])
     if "room_id" in data:
         booking.room_id = data["room_id"]
+    if "feature_ids" in data:
+        booking.features = _resolve_features(data["feature_ids"])
 
     db.session.commit()
     return booking

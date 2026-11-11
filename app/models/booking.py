@@ -17,6 +17,9 @@ class Booking(db.Model):
     requester = db.relationship("User", back_populates="bookings")
     room = db.relationship("Room", back_populates="bookings")
     key_transactions = db.relationship("KeyTransaction", back_populates="booking")
+    features = db.relationship(
+        "Feature", secondary="bookings_features", back_populates="bookings"
+    )
 
     __table_args__ = (
         db.CheckConstraint(
@@ -24,3 +27,10 @@ class Booking(db.Model):
             "ck_allowed_states",
         ),
     )
+
+
+class BookingFeatureJump(db.Model):
+    __tablename__ = "bookings_features"
+
+    booking_id = db.Column(db.Integer, db.ForeignKey("booking.id"), primary_key=True)
+    feature_id = db.Column(db.Integer, db.ForeignKey("feature.id"), primary_key=True)

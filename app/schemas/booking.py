@@ -9,6 +9,7 @@ class BookingIn(Schema):
     state = fields.String(required=True, validate=validators.OneOf(BOOKING_STATES))
     requester_id = fields.Integer(required=True)
     room_id = fields.Integer(required=True)
+    feature_ids = fields.List(fields.Integer(), required=False, load_default=list)
 
 
 class BookingOut(Schema):
@@ -18,3 +19,7 @@ class BookingOut(Schema):
     state = fields.String()
     requester_id = fields.Integer()
     room_id = fields.Integer()
+    feature_ids = fields.Method("get_feature_ids", dump_only=True)
+
+    def get_feature_ids(self, obj):
+        return [f.id for f in obj.features]

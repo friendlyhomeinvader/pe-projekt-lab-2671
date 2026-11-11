@@ -85,6 +85,8 @@ def register_booking_routes(app):
             gap_start_iso=gap_start.isoformat(),
             gap_end_iso=gap_end.isoformat(),
             week_offset=week_offset,
+            all_features=list_features(),
+            selected_feature_ids=[int(v) for v in request.args.getlist("feature_ids")],
             **picker,
         )
 
@@ -111,6 +113,7 @@ def register_booking_routes(app):
             request.form.get("start"),
             request.form.get("slots", type=int),
         )
+        feature_ids = [int(v) for v in request.form.getlist("feature_ids")]
 
         def _render_form(error, status):
             return render_template(
@@ -121,6 +124,8 @@ def register_booking_routes(app):
                 gap_start_iso=gap_start.isoformat(),
                 gap_end_iso=gap_end.isoformat(),
                 week_offset=week_offset,
+                all_features=list_features(),
+                selected_feature_ids=feature_ids,
                 error=error,
                 **picker,
             ), status
@@ -128,16 +133,17 @@ def register_booking_routes(app):
         if not picker["start_options"]:
             return _render_form("This slot is no longer available.", 422)
 
+        booking_data = {
+            "start_date": picker["selected_start"],
+            "end_date": picker["end_time"],
+            "state": "PENDING",
+            "requester_id": current_user.id,
+            "room_id": room_id,
+            "feature_ids": feature_ids,
+        }
+
         try:
-            booking = create_booking(
-                {
-                    "start_date": picker["selected_start"],
-                    "end_date": picker["end_time"],
-                    "state": "PENDING",
-                    "requester_id": current_user.id,
-                    "room_id": room_id,
-                }
-            )
+            booking = create_booking(booking_data)
         except ValueError as err:
             return _render_form(str(err), 422)
 

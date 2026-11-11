@@ -1,6 +1,10 @@
 from datetime import datetime, time, timedelta, timezone
 
-from app.services.booking import LIVE_STATES, list_bookings_for_room
+from app.services.booking import (
+    LIVE_STATES,
+    list_bookings_for_room,
+    missing_room_features,
+)
 from app.services.maintenance import maintenance_slots_for_room
 
 VIEW_START_HOUR = 5
@@ -215,6 +219,9 @@ def build_week_view(room_id, week_offset, current_user_id):
             e = min(b.end_date, day_end)
             is_own = b.requester_id == current_user_id
             label = f"{b.start_date:%H:%M}–{b.end_date:%H:%M} ({b.state})"
+            missing = missing_room_features(b)
+            if missing:
+                label += " · needs: " + ", ".join(f.name for f in missing)
             booking_blocks.append(
                 {
                     "id": b.id,
