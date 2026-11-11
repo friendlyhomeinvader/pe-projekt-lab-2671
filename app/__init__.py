@@ -16,7 +16,7 @@ migrate = Migrate()
 login_manager = LoginManager()
 
 
-def create_app():
+def create_app(start_background_jobs=True):
     app = APIFlask(
         __name__, instance_relative_config=True, title="Keymaster API", version="0.1.3"
     )
@@ -52,6 +52,11 @@ def create_app():
     register_api(app)
     register_routes(app)
     register_seed_command(app)
+
+    if start_background_jobs:
+        from app.services.no_show import start_no_show_sweeper
+
+        start_no_show_sweeper(app)
 
     @app.spec_processor
     def hide_non_api_paths(spec):

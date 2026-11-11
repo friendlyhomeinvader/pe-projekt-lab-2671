@@ -28,6 +28,11 @@ NAV_ITEMS = [
         "label": "Booking Management",
         "allowed_roles": ("ADMIN",),
     },
+    {
+        "slug": "settings",
+        "label": "Settings",
+        "allowed_roles": ("ADMIN",),
+    },
 ]
 
 

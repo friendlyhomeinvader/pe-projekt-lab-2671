@@ -1,0 +1,36 @@
+<div id="settings-form">
+    <h2 class="text-xl font-semibold text-gray-800 mb-4">Settings</h2>
+
+    <form
+        hx-patch="/settings"
+        hx-target="#settings-form"
+        hx-swap="outerHTML"
+        class="bg-white rounded-md shadow p-6 max-w-md space-y-4"
+    >
+        <div>
+            <label class="block text-sm font-medium text-gray-700">No-show grace period (minutes)</label>
+            <p class="text-xs text-gray-500 mt-1 mb-1">
+                How long after a booking's start time to wait, with no key picked up, before marking it a no-show and freeing the room.
+            </p>
+            <input
+                type="number"
+                name="no_show_grace_minutes"
+                min="1"
+                value="{{ values.get('no_show_grace_minutes', '') }}"
+                class="mt-1 w-32 rounded-md border border-gray-300 px-3 py-2 text-sm"
+            >
+            {% if errors.get("no_show_grace_minutes") %}
+            <p class="text-sm text-red-600 mt-1">{{ errors["no_show_grace_minutes"][0] }}</p>
+            {% endif %}
+        </div>
+
+        <div class="flex justify-end">
+            <button
+                type="submit"
+                class="bg-blue-600 text-white text-sm font-medium px-3 py-2 rounded-md hover:bg-blue-700"
+            >
+                Save
+            </button>
+        </div>
+    </form>
+</div>
