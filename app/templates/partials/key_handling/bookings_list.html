@@ -24,7 +24,7 @@
                 <td class="px-4 py-2">{{ row.booking.start_date.strftime("%Y-%m-%d %H:%M") }}</td>
                 <td class="px-4 py-2">{{ row.booking.end_date.strftime("%Y-%m-%d %H:%M") }}</td>
                 <td class="px-4 py-2">
-+                    <span class="inline-block text-xs px-2 py-0.5 rounded-full {{ row.state_style }}">{{ row.state_label }}</span>
+                    <span class="inline-block text-xs px-2 py-0.5 rounded-full {{ row.state_style }}">{{ row.state_label }}</span>
                 </td>
                 <td class="px-4 py-2 text-right">
                     <label
@@ -67,7 +67,13 @@
                 </td>
                 <td class="px-4 py-2">{{ booking.start_date.strftime("%Y-%m-%d %H:%M") }}</td>
                 <td class="px-4 py-2">{{ booking.end_date.strftime("%Y-%m-%d %H:%M") }}</td>
-                <td class="px-4 py-2">{{ booking.state }}</td>
+                <td class="px-4 py-2">
+                    {% if booking.state == "ACTIVE" %}
+                    <span class="inline-block text-xs px-2 py-0.5 rounded-full bg-red-100 border border-red-300 text-red-700">Key overdue</span>
+                    {% else %}
+                    <span class="inline-block text-xs px-2 py-0.5 rounded-full bg-amber-100 border border-amber-300 text-amber-700">No-show pending</span>
+                    {% endif %}
+                </td>
                 <td class="px-4 py-2 text-right">
                     <label
                         for="modal-toggle"
