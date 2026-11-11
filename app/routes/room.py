@@ -5,6 +5,7 @@ from sqlalchemy.exc import SQLAlchemyError
 
 from app import db
 from app.schemas.room import RoomIn
+from app.services.audit import log_action
 from app.services.auth import role_required
 from app.services.feature import list_features
 from app.services.nav import grouped_visible_nav_items
@@ -105,6 +106,13 @@ def register_room_routes(app):
                 status=422,
             )
 
+        log_action(
+            current_user.id if current_user.is_authenticated else None,
+            "room.create",
+            entity_type="room",
+            entity_id=room.id,
+            details=room.code,
+        )
         return _room_save_success(room, "created")
 
     @app.patch("/rooms/<int:room_id>")
@@ -139,6 +147,13 @@ def register_room_routes(app):
                 status=422,
             )
 
+        log_action(
+            current_user.id if current_user.is_authenticated else None,
+            "room.update",
+            entity_type="room",
+            entity_id=room.id,
+            details=room.code,
+        )
         return _room_save_success(room, "updated")
 
     @app.get("/rooms/<int:room_id>/delete/confirm")
@@ -157,6 +172,7 @@ def register_room_routes(app):
         if room is None:
             abort(404)
         code = room.code
+        room_id = room.id
         try:
             delete_room(room)
         except SQLAlchemyError:
@@ -168,6 +184,13 @@ def register_room_routes(app):
                 + render_toast("error", "Failed to delete room. Please try again."),
                 500,
             )
+        log_action(
+            current_user.id if current_user.is_authenticated else None,
+            "room.delete",
+            entity_type="room",
+            entity_id=room_id,
+            details=code,
+        )
         return render_template(
             "partials/rooms/delete_success.html", rooms=list_rooms()
         ) + render_toast("success", f"Room {code} deleted.")

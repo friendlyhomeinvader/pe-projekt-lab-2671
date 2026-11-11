@@ -8,7 +8,10 @@ from app.services.booking import (
 )
 from app.services.key import list_authorized_keys
 from app.services.key_authorization import active_authorizations_by_key_id
-from app.services.key_transaction import open_transactions_by_key_id
+from app.services.key_transaction import (
+    open_transactions_by_key_id,
+    room_status_for_keys,
+)
 from app.services.nav import grouped_visible_nav_items
 from app.services.page import htmx_only, render_page
 
@@ -26,6 +29,7 @@ def register_key_handling_routes(app):
             keys=keys,
             authorizations_by_key=authorizations_by_key,
             open_by_key=open_transactions_by_key_id([k.id for k in keys]),
+            room_status=room_status_for_keys(keys),
             booking_rows=list_in_progress_and_upcoming_bookings(),
             unresolved_bookings=list_unresolved_bookings(),
         )
@@ -41,6 +45,7 @@ def register_key_handling_routes(app):
             keys=keys,
             authorizations_by_key=authorizations_by_key,
             open_by_key=open_transactions_by_key_id([k.id for k in keys]),
+            room_status=room_status_for_keys(keys),
         )
 
     @app.get("/key-handling/bookings")

@@ -19,6 +19,7 @@ USER_CONTRACT = ApiContract(
     schema_out=UserOut,
     payload_factory=user_payload,
     unique_fields=("username", "email"),
+    required_role="ADMIN",
 )
 
 ROOM_CONTRACT = ApiContract(
@@ -28,6 +29,7 @@ ROOM_CONTRACT = ApiContract(
     schema_out=RoomOut,
     payload_factory=room_payload,
     unique_fields=(),
+    required_role="ADMIN",
 )
 
 FEATURE_CONTRACT = ApiContract(
@@ -37,6 +39,7 @@ FEATURE_CONTRACT = ApiContract(
     schema_out=FeatureOut,
     payload_factory=feature_payload,
     unique_fields=(),
+    required_role="ADMIN",
 )
 
 BOOKING_CONTRACT = ApiContract(
@@ -46,6 +49,7 @@ BOOKING_CONTRACT = ApiContract(
     schema_out=BookingOut,
     payload_factory=booking_payload,
     unique_fields=(),
+    required_role="REQUESTER",
 )
 
 KEY_CONTRACT = ApiContract(
@@ -55,6 +59,7 @@ KEY_CONTRACT = ApiContract(
     schema_out=KeyOut,
     payload_factory=key_payload,
     unique_fields=(),
+    required_role="ADMIN",
 )
 
 ALL_CONTRACTS = [

@@ -14,7 +14,8 @@ def _create_room(client, **overrides):
     return response.json
 
 
-def test_create_room_with_feature_ids(client):
+def test_create_room_with_feature_ids(client, login_as):
+    login_as("ADMIN")
     f1 = _create_feature(client, name="Projector")
     f2 = _create_feature(client, name="Whiteboard")
 
@@ -24,21 +25,24 @@ def test_create_room_with_feature_ids(client):
     assert set(response.json["feature_ids"]) == {f1, f2}
 
 
-def test_create_room_without_feature_ids(client):
+def test_create_room_without_feature_ids(client, login_as):
+    login_as("ADMIN")
     response = client.post("/api/rooms/", json=room_payload())
 
     assert_status(response, 201)
     assert response.json["feature_ids"] == []
 
 
-def test_create_room_with_unknown_feature_id_is_rejected(client):
+def test_create_room_with_unknown_feature_id_is_rejected(client, login_as):
+    login_as("ADMIN")
     response = client.post("/api/rooms/", json=room_payload(feature_ids=[999999]))
 
     assert_status(response, 422)
     assert "999999" in response.json["message"]
 
 
-def test_create_room_with_duplicate_feature_id_succeeds(client):
+def test_create_room_with_duplicate_feature_id_succeeds(client, login_as):
+    login_as("ADMIN")
     f1 = _create_feature(client, name="Projector")
 
     response = client.post("/api/rooms/", json=room_payload(feature_ids=[f1, f1]))
@@ -47,7 +51,8 @@ def test_create_room_with_duplicate_feature_id_succeeds(client):
     assert response.json["feature_ids"] == [f1]
 
 
-def test_patch_feature_ids_replaces_full_set(client):
+def test_patch_feature_ids_replaces_full_set(client, login_as):
+    login_as("ADMIN")
     f1 = _create_feature(client, name="Projector")
     f2 = _create_feature(client, name="Whiteboard")
     f3 = _create_feature(client, name="Speakers")
@@ -60,7 +65,8 @@ def test_patch_feature_ids_replaces_full_set(client):
     assert response.json["feature_ids"] == [f3]
 
 
-def test_patch_without_feature_ids_leaves_associations_untouched(client):
+def test_patch_without_feature_ids_leaves_associations_untouched(client, login_as):
+    login_as("ADMIN")
     f1 = _create_feature(client, name="Projector")
     f2 = _create_feature(client, name="Whiteboard")
 
@@ -73,7 +79,8 @@ def test_patch_without_feature_ids_leaves_associations_untouched(client):
     assert set(response.json["feature_ids"]) == {f1, f2}
 
 
-def test_patch_feature_ids_with_unknown_id_is_rejected(client):
+def test_patch_feature_ids_with_unknown_id_is_rejected(client, login_as):
+    login_as("ADMIN")
     room = _create_room(client)
 
     response = client.patch(f"/api/rooms/{room['id']}/", json={"feature_ids": [999999]})
@@ -82,7 +89,8 @@ def test_patch_feature_ids_with_unknown_id_is_rejected(client):
     assert "999999" in response.json["message"]
 
 
-def test_patch_feature_ids_to_empty_list_clears_associations(client):
+def test_patch_feature_ids_to_empty_list_clears_associations(client, login_as):
+    login_as("ADMIN")
     f1 = _create_feature(client, name="Projector")
     f2 = _create_feature(client, name="Whiteboard")
 

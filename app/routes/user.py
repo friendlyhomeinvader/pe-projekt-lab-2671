@@ -6,6 +6,7 @@ from sqlalchemy.exc import IntegrityError
 from app import db
 from app.models.user import USER_ROLES
 from app.schemas.user import UserIn
+from app.services.audit import log_action
 from app.services.auth import role_required
 from app.services.nav import grouped_visible_nav_items
 from app.services.notify import render_toast
@@ -95,6 +96,12 @@ def register_user_routes(app):
                 status=409,
             )
 
+        log_action(
+            current_user.id if current_user.is_authenticated else None,
+            "user.create",
+            entity_type="user",
+            entity_id=user.id,
+        )
         return _save_success(user, "created")
 
     @app.patch("/users/<int:user_id>")
@@ -107,6 +114,15 @@ def register_user_routes(app):
         form_data = request.form.to_dict()
         if not form_data.get("password"):
             form_data.pop("password", None)
+
+        if (
+            user.id == current_user.id
+            and form_data.get("role")
+            and form_data["role"] != "ADMIN"
+        ):
+            return _render_user_form(
+                is_edit=True, user_id=user_id, values=request.form, errors={}
+            ) + render_toast("error", "You can't change your own role away from Admin.")
 
         try:
             data = UserIn(partial=True).load(form_data)
@@ -131,6 +147,12 @@ def register_user_routes(app):
                 status=409,
             )
 
+        log_action(
+            current_user.id if current_user.is_authenticated else None,
+            "user.update",
+            entity_type="user",
+            entity_id=user.id,
+        )
         return _save_success(user, "updated")
 
     @app.get("/users/<int:user_id>/delete/confirm")
@@ -153,7 +175,15 @@ def register_user_routes(app):
                 "partials/users/delete_success.html", users=list_users()
             ) + render_toast("error", "You can't delete your own account.")
         username = user.username
+        user_id = user.id
         delete_user(user)
+        log_action(
+            current_user.id if current_user.is_authenticated else None,
+            "user.delete",
+            entity_type="user",
+            entity_id=user_id,
+            details=username,
+        )
         return render_template(
             "partials/users/delete_success.html", users=list_users()
         ) + render_toast("success", f"User {username} deleted.")

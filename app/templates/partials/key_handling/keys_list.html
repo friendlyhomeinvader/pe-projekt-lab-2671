@@ -8,11 +8,14 @@
                 <th class="px-4 py-2">Tag</th>
                 <th class="px-4 py-2">Type</th>
                 <th class="px-4 py-2">Rooms</th>
+                <th class="px-4 py-2">Holder</th>
+                <th class="px-4 py-2">Issued At</th>
                 <th class="px-4 py-2"></th>
             </tr>
         </thead>
         <tbody class="divide-y divide-gray-100">
             {% for key in keys %}
+            {% set transaction = open_by_key.get(key.id) %}
             <tr>
                 <td class="px-4 py-2">{{ key.id }}</td>
                 <td class="px-4 py-2">{{ key.tag }}</td>
@@ -24,15 +27,33 @@
                     {% endif %}
                 </td>
                 <td class="px-4 py-2">
-                    <span class="inline-block bg-gray-100 text-gray-700 text-xs px-2 py-0.5 rounded-full mr-1">{{ key.room.code }}</span>
-                    {% if key.is_master_key %}
-                        {% for room in key.rooms %}
-                        <span class="inline-block bg-gray-100 text-gray-700 text-xs px-2 py-0.5 rounded-full mr-1">{{ room.code }}</span>
-                        {% endfor %}
+                    {% set rooms = [key.room] + (key.rooms if key.is_master_key else []) %}
+                    {% for room in rooms %}
+                    <span class="inline-flex items-center gap-1 mr-1 mb-1">
+                        <span class="inline-block bg-gray-100 text-gray-700 text-xs px-2 py-0.5 rounded-full">{{ room.code }}</span>
+                        {% set status = room_status.get(room.id) %}
+                        {% if status %}
+                        <span class="inline-block text-xs px-2 py-0.5 rounded-full {{ status.style }}">{{ status.label }}</span>
+                        {% endif %}
+                    </span>
+                    {% endfor %}
+                </td>
+                <td class="px-4 py-2">
+                    {% if transaction %}
+                    {{ transaction.holder.display_name }}
+                    {% else %}
+                    <span class="text-gray-400">&mdash;</span>
+                    {% endif %}
+                </td>
+                <td class="px-4 py-2">
+                    {% if transaction %}
+                    {{ transaction.issued_at.strftime("%Y-%m-%d %H:%M") }}
+                    {% else %}
+                    <span class="text-gray-400">&mdash;</span>
                     {% endif %}
                 </td>
                 <td class="px-4 py-2 text-right space-x-2">
-                    {% if key.id in open_by_key %}
+                    {% if transaction %}
                     <label
                         for="modal-toggle"
                         hx-get="/key-handling/keys/{{ key.id }}/transaction"
@@ -51,7 +72,7 @@
             </tr>
             {% else %}
             <tr>
-                <td class="px-4 py-2 text-gray-500" colspan="5">No keys yet.</td>
+                <td class="px-4 py-2 text-gray-500" colspan="7">No keys yet.</td>
             </tr>
             {% endfor %}
         </tbody>

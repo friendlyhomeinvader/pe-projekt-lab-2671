@@ -52,7 +52,8 @@ def _create_authorization(client, key_id, assignee_id, assigner_id):
     return response.json
 
 
-def test_grant_against_non_master_key_is_rejected(client):
+def test_grant_against_non_master_key_is_rejected(client, login_as):
+    login_as("ADMIN")
     key = _create_regular_key(client)
     assignee_id = _create_user()
     assigner_id = _create_user()
@@ -70,7 +71,8 @@ def test_grant_against_non_master_key_is_rejected(client):
     assert "master key" in response.json["message"].lower()
 
 
-def test_grant_against_master_key_succeeds(client):
+def test_grant_against_master_key_succeeds(client, login_as):
+    login_as("ADMIN")
     key = _create_master_key(client)
     assignee_id = _create_user()
     assigner_id = _create_user()
@@ -92,7 +94,8 @@ def test_grant_against_master_key_succeeds(client):
     assert response.json["revoked_at"] is None
 
 
-def test_grant_duplicate_active_authorization_is_rejected(client):
+def test_grant_duplicate_active_authorization_is_rejected(client, login_as):
+    login_as("ADMIN")
     key = _create_master_key(client)
     assignee_id = _create_user()
     assigner_id = _create_user()
@@ -113,7 +116,8 @@ def test_grant_duplicate_active_authorization_is_rejected(client):
     assert "active" in message
 
 
-def test_grant_after_revoke_succeeds_with_new_row(client):
+def test_grant_after_revoke_succeeds_with_new_row(client, login_as):
+    login_as("ADMIN")
     key = _create_master_key(client)
     assignee_id = _create_user()
     assigner_id = _create_user()
@@ -135,7 +139,8 @@ def test_grant_after_revoke_succeeds_with_new_row(client):
     assert second_response.json["id"] != first["id"]
 
 
-def test_revoke_sets_revoked_at(client):
+def test_revoke_sets_revoked_at(client, login_as):
+    login_as("ADMIN")
     key = _create_master_key(client)
     assignee_id = _create_user()
     assigner_id = _create_user()
@@ -147,7 +152,8 @@ def test_revoke_sets_revoked_at(client):
     assert response.json["revoked_at"] is not None
 
 
-def test_revoke_already_revoked_authorization_is_rejected(client):
+def test_revoke_already_revoked_authorization_is_rejected(client, login_as):
+    login_as("ADMIN")
     key = _create_master_key(client)
     assignee_id = _create_user()
     assigner_id = _create_user()
@@ -163,7 +169,8 @@ def test_revoke_already_revoked_authorization_is_rejected(client):
     assert "revoked" in message
 
 
-def test_revoke_nonexistent_authorization_returns_404(client):
+def test_revoke_nonexistent_authorization_returns_404(client, login_as):
+    login_as("ADMIN")
     response = client.post("/api/key-authorizations/999999/revoke")
 
     assert_status(response, 404)
@@ -175,7 +182,8 @@ def test_get_nonexistent_authorization_returns_404(client):
     assert_status(response, 404)
 
 
-def test_list_authorizations_returns_all_created(client):
+def test_list_authorizations_returns_all_created(client, login_as):
+    login_as("ADMIN")
     key = _create_master_key(client)
     assignee_1 = _create_user()
     assignee_2 = _create_user()
@@ -192,7 +200,8 @@ def test_list_authorizations_returns_all_created(client):
     assert second["id"] in ids
 
 
-def test_get_single_authorization_returns_correct_record(client):
+def test_get_single_authorization_returns_correct_record(client, login_as):
+    login_as("ADMIN")
     key = _create_master_key(client)
     assignee_id = _create_user()
     assigner_id = _create_user()
@@ -207,7 +216,8 @@ def test_get_single_authorization_returns_correct_record(client):
     assert response.json["assigner_id"] == assigner_id
 
 
-def test_grant_with_unknown_key_id_returns_422(client):
+def test_grant_with_unknown_key_id_returns_422(client, login_as):
+    login_as("ADMIN")
     assignee_id = _create_user()
     assigner_id = _create_user()
 
@@ -220,7 +230,8 @@ def test_grant_with_unknown_key_id_returns_422(client):
     assert "999999" in response.json["message"]
 
 
-def test_grant_with_unknown_assignee_id_returns_422(client):
+def test_grant_with_unknown_assignee_id_returns_422(client, login_as):
+    login_as("ADMIN")
     key = _create_master_key(client)
     assigner_id = _create_user()
 
@@ -233,7 +244,8 @@ def test_grant_with_unknown_assignee_id_returns_422(client):
     assert "999999" in response.json["message"]
 
 
-def test_grant_with_unknown_assigner_id_returns_422(client):
+def test_grant_with_unknown_assigner_id_returns_422(client, login_as):
+    login_as("ADMIN")
     key = _create_master_key(client)
     assignee_id = _create_user()
 
@@ -246,7 +258,8 @@ def test_grant_with_unknown_assigner_id_returns_422(client):
     assert "999999" in response.json["message"]
 
 
-def test_grant_with_missing_required_field_returns_422(client):
+def test_grant_with_missing_required_field_returns_422(client, login_as):
+    login_as("ADMIN")
     key = _create_master_key(client)
     assignee_id = _create_user()
 

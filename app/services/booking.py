@@ -7,6 +7,20 @@ from app.models.user import User
 
 LIVE_STATES = ("PENDING", "ACTIVE")
 
+BOOKING_STATE_LABELS = {
+    "PENDING": "Pending",
+    "ACTIVE": "Active",
+    "NO_SHOW": "No-show",
+    "FINISHED": "Finished",
+}
+
+BOOKING_STATE_STYLES = {
+    "PENDING": "bg-amber-100 border border-amber-300 text-amber-700",
+    "ACTIVE": "bg-green-100 border border-green-300 text-green-700",
+    "NO_SHOW": "bg-red-100 border border-red-300 text-red-700",
+    "FINISHED": "bg-gray-100 border border-gray-300 text-gray-600",
+}
+
 
 def list_bookings():
     return Booking.query.order_by(Booking.id).all()
@@ -130,6 +144,12 @@ def delete_booking(booking):
     db.session.commit()
 
 
+def cancel_booking(booking):
+    if booking.state != "PENDING":
+        raise ValueError("Only pending bookings can be cancelled.")
+    delete_booking(booking)
+
+
 def list_in_progress_and_upcoming_bookings():
     now = datetime.now(timezone.utc).replace(tzinfo=None)
     live = Booking.query.filter(
@@ -141,7 +161,8 @@ def list_in_progress_and_upcoming_bookings():
         rows.append(
             {
                 "booking": booking,
-                "status": "IN_PROGRESS" if in_progress else "UPCOMING",
+                "state_label": BOOKING_STATE_LABELS[booking.state],
+                "state_style": BOOKING_STATE_STYLES[booking.state],
                 "sort_date": booking.end_date if in_progress else booking.start_date,
             }
         )

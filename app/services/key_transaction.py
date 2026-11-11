@@ -1,12 +1,27 @@
 from datetime import datetime, timedelta, timezone
 
+from sqlalchemy.orm import joinedload
+
 from app import db
 from app.models.booking import Booking
-from app.models.key import Key
+from app.models.key import Key, KeyRoomJump
 from app.models.key_transaction import KeyTransaction
 from app.models.user import USER_IDENTIFICATION_METHODS, User, UserIdentification
 from app.services.booking import LIVE_STATES
 from app.services.key_authorization import active_assignee_ids_for_key
+from app.services.maintenance import rooms_under_maintenance
+
+ROOM_STATUS_LABELS = {
+    "FREE": "Free",
+    "OCCUPIED": "Occupied",
+    "MAINTENANCE": "Under maintenance",
+}
+
+ROOM_STATUS_STYLES = {
+    "FREE": "bg-green-100 border border-green-300 text-green-700",
+    "OCCUPIED": "bg-amber-100 border border-amber-300 text-amber-700",
+    "MAINTENANCE": "bg-red-100 border border-red-300 text-red-700",
+}
 
 
 def key_room_ids(key):
@@ -39,10 +54,60 @@ def get_open_transaction_for_booking(booking_id):
 def open_transactions_by_key_id(key_ids):
     if not key_ids:
         return {}
-    rows = KeyTransaction.query.filter(
-        KeyTransaction.key_id.in_(key_ids), KeyTransaction.state == "ISSUED"
-    ).all()
+    rows = (
+        KeyTransaction.query.options(joinedload(KeyTransaction.holder))
+        .filter(KeyTransaction.key_id.in_(key_ids), KeyTransaction.state == "ISSUED")
+        .all()
+    )
     return {row.key_id: row for row in rows}
+
+
+def occupied_room_ids(room_ids):
+    room_ids = list(room_ids)
+    if not room_ids:
+        return set()
+    primary_rows = (
+        db.session.query(Key.room_id)
+        .join(KeyTransaction, KeyTransaction.key_id == Key.id)
+        .filter(KeyTransaction.state == "ISSUED", Key.room_id.in_(room_ids))
+        .all()
+    )
+    secondary_rows = (
+        db.session.query(KeyRoomJump.room_id)
+        .join(KeyTransaction, KeyTransaction.key_id == KeyRoomJump.key_id)
+        .filter(KeyTransaction.state == "ISSUED", KeyRoomJump.room_id.in_(room_ids))
+        .all()
+    )
+    return {row[0] for row in primary_rows} | {row[0] for row in secondary_rows}
+
+
+def room_status_for_keys(keys):
+    room_ids = set()
+    for key in keys:
+        room_ids.update(key_room_ids(key))
+    return room_status_map(room_ids)
+
+
+def room_status_map(room_ids):
+    room_ids = set(room_ids)
+    if not room_ids:
+        return {}
+    maintenance_ids = rooms_under_maintenance(room_ids)
+    occupied_ids = occupied_room_ids(room_ids)
+    statuses = {}
+    for room_id in room_ids:
+        if room_id in maintenance_ids:
+            code = "MAINTENANCE"
+        elif room_id in occupied_ids:
+            code = "OCCUPIED"
+        else:
+            code = "FREE"
+        statuses[room_id] = {
+            "code": code,
+            "label": ROOM_STATUS_LABELS[code],
+            "style": ROOM_STATUS_STYLES[code],
+        }
+    return statuses
 
 
 def eligible_bookings_for_key(key):

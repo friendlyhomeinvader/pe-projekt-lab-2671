@@ -3,6 +3,7 @@ from flask_login import current_user
 
 from app import db
 from app.models.booking import Booking
+from app.services.audit import log_action
 from app.services.auth import role_required
 from app.services.booking import (
     get_booking,
@@ -22,6 +23,7 @@ from app.services.key_transaction import (
     open_transactions_by_key_id,
     resolve_key_for_booking,
     return_key,
+    room_status_for_keys,
 )
 from app.services.notify import render_toast
 from app.services.page import htmx_only
@@ -116,11 +118,19 @@ def register_key_transaction_routes(app):
                 "partials/key_handling/issue_form.html", **context
             ), 422
 
+        log_action(
+            current_user.id,
+            "key_transaction.issue",
+            entity_type="key_transaction",
+            entity_id=transaction.id,
+            details=key.tag,
+        )
         keys = list_authorized_keys()
         return render_template(
             "partials/key_handling/_keys_list_oob.html",
             keys=keys,
             open_by_key=open_transactions_by_key_id([k.id for k in keys]),
+            room_status=room_status_for_keys(keys),
         ) + render_toast(
             "success", f"{key.tag} issued to {transaction.holder.display_name}."
         )
@@ -151,11 +161,19 @@ def register_key_transaction_routes(app):
                 error=str(err),
             ), 422
 
+        log_action(
+            current_user.id,
+            "key_transaction.return",
+            entity_type="key_transaction",
+            entity_id=transaction.id,
+            details=key.tag,
+        )
         keys = list_authorized_keys()
         return render_template(
             "partials/key_handling/_keys_list_oob.html",
             keys=keys,
             open_by_key=open_transactions_by_key_id([k.id for k in keys]),
+            room_status=room_status_for_keys(keys),
         ) + render_toast("success", f"{key.tag} returned.")
 
     @app.get("/key-handling/bookings/<int:booking_id>/transaction")
@@ -234,6 +252,13 @@ def register_key_transaction_routes(app):
                 error=str(err),
             ), 422
 
+        log_action(
+            current_user.id,
+            "key_transaction.issue",
+            entity_type="key_transaction",
+            entity_id=transaction.id,
+            details=key.tag,
+        )
         return render_template(
             "partials/key_handling/_bookings_list_oob.html",
             booking_rows=list_in_progress_and_upcoming_bookings(),
@@ -269,6 +294,13 @@ def register_key_transaction_routes(app):
                 error=str(err),
             ), 422
 
+        log_action(
+            current_user.id,
+            "key_transaction.return",
+            entity_type="key_transaction",
+            entity_id=transaction.id,
+            details=key.tag,
+        )
         return render_template(
             "partials/key_handling/_bookings_list_oob.html",
             booking_rows=list_in_progress_and_upcoming_bookings(),

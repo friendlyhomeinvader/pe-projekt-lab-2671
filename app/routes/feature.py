@@ -1,9 +1,11 @@
 from flask import abort, render_template, request
+from flask_login import current_user
 from marshmallow import ValidationError
 from sqlalchemy.exc import SQLAlchemyError
 
 from app import db
 from app.schemas.feature import FeatureIn
+from app.services.audit import log_action
 from app.services.auth import role_required
 from app.services.feature import (
     create_feature,
@@ -70,6 +72,13 @@ def register_feature_routes(app):
             )
 
         feature = create_feature(data)
+        log_action(
+            current_user.id if current_user.is_authenticated else None,
+            "feature.create",
+            entity_type="feature",
+            entity_id=feature.id,
+            details=feature.name,
+        )
         return _feature_save_success(feature, "created")
 
     @app.patch("/features/<int:feature_id>")
@@ -91,6 +100,13 @@ def register_feature_routes(app):
             )
 
         feature = update_feature(feature, data)
+        log_action(
+            current_user.id if current_user.is_authenticated else None,
+            "feature.update",
+            entity_type="feature",
+            entity_id=feature.id,
+            details=feature.name,
+        )
         return _feature_save_success(feature, "updated")
 
     @app.get("/features/<int:feature_id>/delete/confirm")
@@ -109,6 +125,7 @@ def register_feature_routes(app):
         if feature is None:
             abort(404)
         name = feature.name
+        feature_id = feature.id
         try:
             delete_feature(feature)
         except SQLAlchemyError:
@@ -120,6 +137,13 @@ def register_feature_routes(app):
                 + render_toast("error", "Failed to delete feature. Please try again."),
                 500,
             )
+        log_action(
+            current_user.id if current_user.is_authenticated else None,
+            "feature.delete",
+            entity_type="feature",
+            entity_id=feature_id,
+            details=name,
+        )
         return render_template(
             "partials/features/delete_success.html", features=list_features()
         ) + render_toast("success", f"Feature {name} deleted.")
