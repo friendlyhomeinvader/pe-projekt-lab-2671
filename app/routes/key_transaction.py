@@ -177,6 +177,10 @@ def register_key_transaction_routes(app):
         try:
             return_key(
                 transaction,
+                identification_type=request.form.get("identification_type"),
+                identification_value=request.form.get(
+                    "identification_value", ""
+                ).strip(),
                 room_condition_notes=request.form.get("room_condition_notes"),
                 damage_reported="damage_reported" in request.form,
             )
@@ -312,6 +316,10 @@ def register_key_transaction_routes(app):
         try:
             return_key(
                 transaction,
+                identification_type=request.form.get("identification_type"),
+                identification_value=request.form.get(
+                    "identification_value", ""
+                ).strip(),
                 room_condition_notes=request.form.get("room_condition_notes"),
                 damage_reported="damage_reported" in request.form,
             )

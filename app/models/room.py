@@ -11,6 +11,9 @@ class Feature(db.Model):
     rooms = db.relationship(
         "Room", secondary="rooms_features", back_populates="features"
     )
+    bookings = db.relationship(
+        "Booking", secondary="bookings_features", back_populates="features"
+    )
 
 
 class RoomFeatureJump(db.Model):

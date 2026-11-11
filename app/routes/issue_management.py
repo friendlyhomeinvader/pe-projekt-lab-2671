@@ -45,7 +45,7 @@ def register_issue_management_routes(app):
         return render_page(
             "partials/issue_management.html",
             nav_groups=grouped_visible_nav_items(current_user.role),
-            title="Issue Mgmt",
+            title="Issue Management",
             tickets=list_issue_tickets(),
             state_labels=ISSUE_TICKET_STATE_LABELS,
             state_styles=ISSUE_TICKET_STATE_STYLES,

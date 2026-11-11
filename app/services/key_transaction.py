@@ -253,9 +253,29 @@ def issue_key(
     return transaction
 
 
-def return_key(transaction, *, room_condition_notes=None, damage_reported=False):
+def return_key(
+    transaction,
+    *,
+    identification_type,
+    identification_value,
+    room_condition_notes=None,
+    damage_reported=False,
+):
     if transaction.state != "ISSUED":
         raise ValueError("Key is not currently issued.")
+    if identification_type not in USER_IDENTIFICATION_METHODS:
+        raise ValueError(f"Unknown identification type: {identification_type}")
+    if not identification_value:
+        raise ValueError("Identification value is required.")
+
+    issued = transaction.identification
+    if (
+        issued is None
+        or issued.type != identification_type
+        or issued.value != identification_value
+    ):
+        raise ValueError("Identification does not match the record from issue.")
+
     transaction.state = "RETURNED"
     transaction.returned_at = datetime.now(timezone.utc).replace(tzinfo=None)
     transaction.room_condition_notes = room_condition_notes or None

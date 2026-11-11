@@ -1,6 +1,11 @@
 from datetime import datetime, time, timedelta, timezone
 
-from app.services.booking import LIVE_STATES, list_bookings_for_room
+from app.services.booking import (
+    LIVE_STATES,
+    list_bookings_for_room,
+    missing_room_features,
+)
+from app.services.maintenance import maintenance_slots_for_room
 
 VIEW_START_HOUR = 5
 VIEW_END_HOUR = 20
@@ -23,6 +28,8 @@ STATE_STYLES_OWN = {
     "FINISHED": "bg-gray-400 border border-gray-600 text-gray-950",
 }
 
+MAINTENANCE_STYLE = "bg-slate-400 border border-slate-600 text-slate-950"
+
 
 def current_time():
     return datetime.now(timezone.utc).replace(tzinfo=None)
@@ -40,13 +47,11 @@ def _pct_of_day(dt, day_start, day_end):
     )
 
 
-def _merge_busy_intervals(bookings, day_start, day_end):
+def _merge_busy_intervals(raw_intervals, day_start, day_end):
     intervals = []
-    for b in bookings:
-        if b.state not in LIVE_STATES:
-            continue
-        s = max(b.start_date, day_start)
-        e = min(b.end_date, day_end)
+    for raw_start, raw_end in raw_intervals:
+        s = max(raw_start, day_start)
+        e = min(raw_end, day_end)
         if s < e:
             intervals.append((s, e))
     intervals.sort()
@@ -188,6 +193,7 @@ def build_week_view(room_id, week_offset, current_user_id):
     range_start, _ = _day_bounds(day_dates[0])
     _, range_end = _day_bounds(day_dates[-1])
     bookings = list_bookings_for_room(room_id, range_start, range_end)
+    maintenance_slots = maintenance_slots_for_room(room_id, range_start, range_end)
 
     days = []
     for day_date in day_dates:
@@ -195,13 +201,27 @@ def build_week_view(room_id, week_offset, current_user_id):
         day_bookings = [
             b for b in bookings if b.start_date < day_end and b.end_date > day_start
         ]
-        busy_intervals = _merge_busy_intervals(day_bookings, day_start, day_end)
+        day_maintenance = [
+            m
+            for m in maintenance_slots
+            if m.start_date < day_end and m.end_date > day_start
+        ]
+        busy_intervals = _merge_busy_intervals(
+            [(b.start_date, b.end_date) for b in day_bookings if b.state in LIVE_STATES]
+            + [(m.start_date, m.end_date) for m in day_maintenance],
+            day_start,
+            day_end,
+        )
 
         booking_blocks = []
         for b in day_bookings:
             s = max(b.start_date, day_start)
             e = min(b.end_date, day_end)
             is_own = b.requester_id == current_user_id
+            label = f"{b.start_date:%H:%M}–{b.end_date:%H:%M} ({b.state})"
+            missing = missing_room_features(b)
+            if missing:
+                label += " · needs: " + ", ".join(f.name for f in missing)
             booking_blocks.append(
                 {
                     "id": b.id,
@@ -213,7 +233,25 @@ def build_week_view(room_id, week_offset, current_user_id):
                     if is_own
                     else STATE_STYLES[b.state],
                     "is_own": is_own,
-                    "label": f"{b.start_date:%H:%M}–{b.end_date:%H:%M} ({b.state})",
+                    "label": label,
+                }
+            )
+
+        maintenance_blocks = []
+        for m in day_maintenance:
+            s = max(m.start_date, day_start)
+            e = min(m.end_date, day_end)
+            label = f"{m.start_date:%H:%M}–{m.end_date:%H:%M} Under maintenance"
+            if m.reason:
+                label += f": {m.reason}"
+            maintenance_blocks.append(
+                {
+                    "id": m.id,
+                    "top_pct": _pct_of_day(s, day_start, day_end),
+                    "height_pct": _pct_of_day(e, day_start, day_end)
+                    - _pct_of_day(s, day_start, day_end),
+                    "style": MAINTENANCE_STYLE,
+                    "label": label,
                 }
             )
 
@@ -258,6 +296,7 @@ def build_week_view(room_id, week_offset, current_user_id):
                 "now_top_pct": now_top_pct,
                 "past_overlay_height_pct": past_overlay_height_pct,
                 "bookings": booking_blocks,
+                "maintenance": maintenance_blocks,
                 "clickable": clickable,
             }
         )

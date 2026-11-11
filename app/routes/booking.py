@@ -5,7 +5,13 @@ from flask_login import current_user
 
 from app.services.audit import log_action
 from app.services.auth import role_required
-from app.services.booking import cancel_booking, create_booking, get_booking
+from app.services.booking import (
+    cancel_booking,
+    create_booking,
+    create_multibooking,
+    get_booking,
+    validate_multibooking,
+)
 from app.services.calendar import build_slot_picker, build_week_view
 from app.services.feature import list_features
 from app.services.nav import can_access_module, grouped_visible_nav_items
@@ -85,6 +91,10 @@ def register_booking_routes(app):
             gap_start_iso=gap_start.isoformat(),
             gap_end_iso=gap_end.isoformat(),
             week_offset=week_offset,
+            multibooking=bool(request.args.get("multibooking")),
+            extra_weeks=request.args.get("extra_weeks", type=int) or 1,
+            all_features=list_features(),
+            selected_feature_ids=[int(v) for v in request.args.getlist("feature_ids")],
             **picker,
         )
 
@@ -111,6 +121,7 @@ def register_booking_routes(app):
             request.form.get("start"),
             request.form.get("slots", type=int),
         )
+        feature_ids = [int(v) for v in request.form.getlist("feature_ids")]
 
         def _render_form(error, status):
             return render_template(
@@ -121,6 +132,10 @@ def register_booking_routes(app):
                 gap_start_iso=gap_start.isoformat(),
                 gap_end_iso=gap_end.isoformat(),
                 week_offset=week_offset,
+                multibooking=bool(request.form.get("multibooking")),
+                extra_weeks=request.form.get("extra_weeks", type=int) or 1,
+                all_features=list_features(),
+                selected_feature_ids=feature_ids,
                 error=error,
                 **picker,
             ), status
@@ -128,16 +143,64 @@ def register_booking_routes(app):
         if not picker["start_options"]:
             return _render_form("This slot is no longer available.", 422)
 
-        try:
-            booking = create_booking(
-                {
-                    "start_date": picker["selected_start"],
-                    "end_date": picker["end_time"],
-                    "state": "PENDING",
-                    "requester_id": current_user.id,
-                    "room_id": room_id,
-                }
+        booking_data = {
+            "start_date": picker["selected_start"],
+            "end_date": picker["end_time"],
+            "state": "PENDING",
+            "requester_id": current_user.id,
+            "room_id": room_id,
+            "feature_ids": feature_ids,
+        }
+
+        if request.form.get("multibooking"):
+            extra_weeks = request.form.get("extra_weeks", type=int)
+            if not extra_weeks:
+                return _render_form("Pick a number of additional weeks.", 422)
+
+            if not request.form.get("confirm_multibooking"):
+                try:
+                    occurrences = validate_multibooking(booking_data, extra_weeks)
+                except ValueError as err:
+                    return _render_form(str(err), 422)
+                return render_template(
+                    "partials/booking/multibooking_confirm.html",
+                    room=room,
+                    occurrences=occurrences,
+                    row_start_iso=row_start.isoformat(),
+                    row_end_iso=row_end.isoformat(),
+                    gap_start_iso=gap_start.isoformat(),
+                    gap_end_iso=gap_end.isoformat(),
+                    week_offset=week_offset,
+                    start_iso=picker["selected_start"].isoformat(),
+                    slots=picker["selected_slots"],
+                    extra_weeks=extra_weeks,
+                    selected_feature_ids=feature_ids,
+                )
+
+            try:
+                bookings = create_multibooking(booking_data, extra_weeks)
+            except ValueError as err:
+                return _render_form(str(err), 422)
+
+            for booking in bookings:
+                log_action(
+                    current_user.id,
+                    "booking.create",
+                    entity_type="booking",
+                    entity_id=booking.id,
+                )
+            calendar = build_week_view(room_id, week_offset, current_user.id)
+            return render_template(
+                "partials/booking/booking_success.html",
+                room=room,
+                week_offset=week_offset,
+                **calendar,
+            ) + render_toast(
+                "success", f"{len(bookings)} bookings created for {room.code}."
             )
+
+        try:
+            booking = create_booking(booking_data)
         except ValueError as err:
             return _render_form(str(err), 422)
 

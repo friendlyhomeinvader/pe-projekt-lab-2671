@@ -1,0 +1,61 @@
+<div class="bg-white rounded-md shadow-lg p-6 w-full max-w-md">
+    <h3 class="text-lg font-semibold text-gray-800 mb-4">Booking conflict</h3>
+    <p class="text-sm text-gray-600 mb-4">
+        This maintenance slot overlaps {{ bookings|length }} existing booking(s).
+        Review them before deciding whether to proceed &mdash; you can cancel or
+        move the affected booking(s) separately from the Bookings screen.
+    </p>
+
+    <ul class="space-y-2 mb-6 max-h-56 overflow-y-auto">
+        {% for booking in bookings %}
+        <li class="border border-gray-200 rounded-md p-3 text-sm">
+            <div class="flex justify-between items-center">
+                <span class="font-medium text-gray-800">{{ booking.room.code }}</span>
+                <span class="px-2 py-0.5 rounded-full text-xs {{ state_styles[booking.state] }}">
+                    {{ state_labels[booking.state] }}
+                </span>
+            </div>
+            <div class="text-gray-600">
+                {{ booking.start_date.strftime("%Y-%m-%d %H:%M") }}&ndash;{{ booking.end_date.strftime("%Y-%m-%d %H:%M") }}
+            </div>
+            <div class="text-gray-500">{{ booking.requester.display_name }}</div>
+        </li>
+        {% endfor %}
+    </ul>
+
+    <div class="flex justify-end gap-2">
+        <button
+            {% if is_edit %}
+            hx-get="/maintenance-slots/{{ slot_id }}/edit"
+            {% else %}
+            hx-get="/maintenance-slots/new"
+            {% endif %}
+            hx-target="#modal-content"
+            hx-swap="innerHTML"
+            class="px-3 py-2 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-100"
+        >
+            Back
+        </button>
+        <form
+            {% if is_edit %}
+            hx-patch="/maintenance-slots/{{ slot_id }}"
+            {% else %}
+            hx-post="/maintenance-slots"
+            {% endif %}
+            hx-target="#modal-content"
+            hx-swap="innerHTML"
+        >
+            <input type="hidden" name="room_id" value="{{ values.get('room_id', '') }}">
+            <input type="hidden" name="start_date" value="{{ values.get('start_date', '') }}">
+            <input type="hidden" name="end_date" value="{{ values.get('end_date', '') }}">
+            <input type="hidden" name="reason" value="{{ values.get('reason', '') or '' }}">
+            <input type="hidden" name="confirm_conflicts" value="1">
+            <button
+                type="submit"
+                class="bg-blue-600 text-white text-sm font-medium px-3 py-2 rounded-md hover:bg-blue-700"
+            >
+                {{ "Save anyway" if is_edit else "Create anyway" }}
+            </button>
+        </form>
+    </div>
+</div>

@@ -1,14 +1,14 @@
 <div>
-    <h2 class="text-xl font-semibold text-gray-800 mb-4">Issue Mgmt</h2>
+    <h2 class="text-xl font-semibold text-gray-800 mb-4">Issue Management</h2>
 
     <div class="relative inline-flex rounded-full bg-gray-200 p-1 text-sm mb-4">
         <input type="radio" name="issue-mgmt-tab" id="issue-mgmt-tab-tickets" class="peer/tickets hidden" checked
                hx-get="/issue-tickets" hx-target="#issue-mgmt-content" hx-swap="innerHTML" hx-params="none">
         <input type="radio" name="issue-mgmt-tab" id="issue-mgmt-tab-maintenance" class="peer/maintenance hidden"
                hx-get="/maintenance-slots" hx-target="#issue-mgmt-content" hx-swap="innerHTML" hx-params="none">
-        <div class="absolute inset-y-1 left-1 w-[calc(50%-4px)] rounded-full bg-blue-600 transition-transform duration-200 ease-in-out peer-checked/maintenance:translate-x-full"></div>
-        <label for="issue-mgmt-tab-tickets" class="relative z-10 flex-1 text-center px-4 py-1.5 rounded-full cursor-pointer font-medium peer-checked/tickets:text-white text-gray-700 transition-colors">Tickets</label>
-        <label for="issue-mgmt-tab-maintenance" class="relative z-10 flex-1 text-center px-4 py-1.5 rounded-full cursor-pointer font-medium peer-checked/maintenance:text-white text-gray-700 transition-colors">Maintenance</label>
+        <div class="absolute inset-y-1 left-1 w-[76px] rounded-full bg-blue-600 transition-[left,width] duration-200 ease-in-out peer-checked/maintenance:left-[80px] peer-checked/maintenance:w-[114px]"></div>
+        <label for="issue-mgmt-tab-tickets" class="relative z-10 whitespace-nowrap text-center px-4 py-1.5 rounded-full cursor-pointer font-medium peer-checked/tickets:text-white text-gray-700 transition-colors">Tickets</label>
+        <label for="issue-mgmt-tab-maintenance" class="relative z-10 whitespace-nowrap text-center px-4 py-1.5 rounded-full cursor-pointer font-medium peer-checked/maintenance:text-white text-gray-700 transition-colors">Maintenance</label>
     </div>
 
     <div id="issue-mgmt-content">

@@ -5,9 +5,11 @@ import pytest
 
 from app import db
 from app.models.audit_log import AuditLog
+from app.models.booking import Booking
 from app.models.room import Room
 from app.models.user import User
 from app.services.maintenance import (
+    MaintenanceSlotConflict,
     create_maintenance_slot,
     delete_maintenance_slot,
     get_maintenance_slot,
@@ -70,6 +72,37 @@ def _form_payload(room_id, **overrides):
     }
     payload.update(overrides)
     return payload
+
+
+def _create_requester(**overrides):
+    n = next(_room_counter)
+    defaults = {
+        "username": f"maintenance.requester.{n}",
+        "display_name": f"Maintenance Requester {n}",
+        "email": f"maintenance.requester.{n}@uni.su",
+        "role": "REQUESTER",
+    }
+    defaults.update(overrides)
+    user = User(**defaults)
+    user.set_password("Password123456!!")
+    db.session.add(user)
+    db.session.commit()
+    return user
+
+
+def _create_booking(room_id, requester_id, **overrides):
+    payload = {
+        "start_date": START,
+        "end_date": END,
+        "state": "PENDING",
+        "room_id": room_id,
+        "requester_id": requester_id,
+    }
+    payload.update(overrides)
+    booking = Booking(**payload)
+    db.session.add(booking)
+    db.session.commit()
+    return booking
 
 
 def test_create_maintenance_slot_succeeds_with_valid_data(client, login_as):
@@ -709,3 +742,126 @@ def test_maintenance_slot_out_derived_fields_match_room_and_actor(client, login_
     assert response.json["room_code"] == room.code
     assert response.json["created_by_name"] == admin.display_name
     assert response.json["created_by_id"] == admin.id
+
+
+def test_create_maintenance_slot_overlapping_live_booking_raises_conflict(client):
+    admin = _create_admin()
+    requester = _create_requester()
+    room = _create_room()
+    booking = _create_booking(room.id, requester.id, state="PENDING")
+
+    with pytest.raises(MaintenanceSlotConflict) as exc_info:
+        create_maintenance_slot(_slot_data(room.id, created_by_id=admin.id))
+
+    assert booking in exc_info.value.bookings
+    assert list_maintenance_slots() == []
+
+
+def test_create_maintenance_slot_with_confirm_conflicts_succeeds(client):
+    admin = _create_admin()
+    requester = _create_requester()
+    room = _create_room()
+    _create_booking(room.id, requester.id, state="ACTIVE")
+
+    slot = create_maintenance_slot(
+        _slot_data(room.id, created_by_id=admin.id, confirm_conflicts=True)
+    )
+
+    assert slot.id is not None
+
+
+@pytest.mark.parametrize("state", ["NO_SHOW", "FINISHED"])
+def test_create_maintenance_slot_ignores_resolved_bookings(client, state):
+    admin = _create_admin()
+    requester = _create_requester()
+    room = _create_room()
+    _create_booking(room.id, requester.id, state=state)
+
+    slot = create_maintenance_slot(_slot_data(room.id, created_by_id=admin.id))
+
+    assert slot.id is not None
+
+
+def test_update_maintenance_slot_overlapping_live_booking_raises_conflict(client):
+    admin = _create_admin()
+    requester = _create_requester()
+    other_room = _create_room()
+    room = _create_room()
+    slot = create_maintenance_slot(_slot_data(other_room.id, created_by_id=admin.id))
+    _create_booking(room.id, requester.id, state="PENDING")
+
+    with pytest.raises(MaintenanceSlotConflict):
+        update_maintenance_slot(slot, {"room_id": room.id})
+
+
+def test_update_maintenance_slot_with_confirm_conflicts_succeeds(client):
+    admin = _create_admin()
+    requester = _create_requester()
+    other_room = _create_room()
+    room = _create_room()
+    slot = create_maintenance_slot(_slot_data(other_room.id, created_by_id=admin.id))
+    _create_booking(room.id, requester.id, state="PENDING")
+
+    updated = update_maintenance_slot(
+        slot, {"room_id": room.id, "confirm_conflicts": True}
+    )
+
+    assert updated.room_id == room.id
+
+
+def test_html_create_conflict_renders_confirm_screen_and_writes_no_audit_log(
+    client, login_as
+):
+    login_as("ADMIN")
+    requester = _create_requester()
+    room = _create_room()
+    _create_booking(room.id, requester.id, state="PENDING")
+
+    response = client.post("/maintenance-slots", data=_form_payload(room.id))
+
+    assert_status(response, 200)
+    body = response.get_data(as_text=True)
+    assert "Booking conflict" in body
+    assert room.code in body
+    assert requester.display_name in body
+    assert AuditLog.query.count() == 0
+    assert list_maintenance_slots() == []
+
+
+def test_html_create_confirm_conflicts_succeeds_and_notes_override_in_audit_log(
+    client, login_as
+):
+    login_as("ADMIN")
+    requester = _create_requester()
+    room = _create_room()
+    booking = _create_booking(room.id, requester.id, state="PENDING")
+
+    response = client.post(
+        "/maintenance-slots",
+        data=_form_payload(room.id, confirm_conflicts="1"),
+    )
+
+    assert_status(response, 200)
+    assert "created" in response.get_data(as_text=True)
+
+    logs = AuditLog.query.filter_by(action="maintenance_slot.create").all()
+    assert len(logs) == 1
+    assert f"#{booking.id}" in logs[0].details
+    assert "overrode" in logs[0].details
+
+
+def test_html_update_conflict_renders_confirm_screen(client, login_as):
+    admin = login_as("ADMIN")
+    requester = _create_requester()
+    other_room = _create_room()
+    room = _create_room()
+    slot = create_maintenance_slot(_slot_data(other_room.id, created_by_id=admin.id))
+    _create_booking(room.id, requester.id, state="PENDING")
+
+    response = client.patch(
+        f"/maintenance-slots/{slot.id}", data={"room_id": str(room.id)}
+    )
+
+    assert_status(response, 200)
+    assert "Booking conflict" in response.get_data(as_text=True)
+    assert get_maintenance_slot(slot.id).room_id == other_room.id

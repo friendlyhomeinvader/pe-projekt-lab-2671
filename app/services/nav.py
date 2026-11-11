@@ -25,7 +25,7 @@ NAV_ITEMS = [
     },
     {
         "slug": "issue-management",
-        "label": "Issue Mgmt",
+        "label": "Issue Management",
         "allowed_roles": ("ADMIN",),
     },
     {

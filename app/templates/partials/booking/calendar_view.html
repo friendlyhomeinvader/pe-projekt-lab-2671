@@ -63,6 +63,15 @@
             ></div>
             {% endif %}
 
+            {% for m in day.maintenance %}
+            <div
+                class="absolute left-0 right-0 mx-1 rounded px-1 text-xs overflow-hidden z-10 flex items-center {{ m.style }}"
+                style="top: {{ m.top_pct }}%; height: {{ m.height_pct }}%;"
+            >
+                <span class="truncate">{{ m.label }}</span>
+            </div>
+            {% endfor %}
+
             {% for b in day.bookings %}
             <div
                 class="absolute left-0 right-0 mx-1 rounded px-1 text-xs overflow-hidden z-10 flex items-center justify-between gap-1 {{ b.style }}"
