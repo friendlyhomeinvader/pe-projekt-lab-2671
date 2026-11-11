@@ -17,6 +17,27 @@
         </div>
 
         <div>
+            <label class="block text-sm font-medium text-gray-700">Identification type</label>
+            <select name="identification_type" class="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm">
+                <option value="PIN">PIN</option>
+                <option value="CARD">Card</option>
+                <option value="SIGNATURE">Signature</option>
+            </select>
+        </div>
+
+        <div>
+            <label class="block text-sm font-medium text-gray-700">Identification value</label>
+            <input
+                type="password"
+                name="identification_value"
+                required
+                autocomplete="off"
+                class="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
+            >
+            <p class="text-xs text-gray-500 mt-1">Must match the identification given at issue.</p>
+        </div>
+
+        <div>
             <label class="block text-sm font-medium text-gray-700">Room condition notes</label>
             <textarea
                 name="room_condition_notes"

@@ -235,6 +235,8 @@ def test_key_return_route_with_raise_ticket_creates_ticket_and_audit_row(
     response = client.post(
         f"/key-handling/keys/{key.id}/return",
         data={
+            "identification_type": "PIN",
+            "identification_value": "1234",
             "room_condition_notes": "Desk scratched.",
             "raise_ticket": "on",
         },
@@ -301,6 +303,8 @@ def test_booking_return_route_with_raise_ticket_creates_ticket_and_audit_row(
     response = client.post(
         f"/key-handling/bookings/{booking.id}/return",
         data={
+            "identification_type": "PIN",
+            "identification_value": "1234",
             "room_condition_notes": "Whiteboard marker dried out.",
             "raise_ticket": "on",
         },
@@ -429,6 +433,8 @@ def test_damage_reported_alone_does_not_create_ticket(client, login_as):
     response = client.post(
         f"/key-handling/keys/{key.id}/return",
         data={
+            "identification_type": "PIN",
+            "identification_value": "1234",
             "room_condition_notes": "Minor scuff.",
             "damage_reported": "on",
         },
@@ -455,6 +461,8 @@ def test_raise_ticket_alone_does_not_require_damage_reported(client, login_as):
     response = client.post(
         f"/key-handling/keys/{key.id}/return",
         data={
+            "identification_type": "PIN",
+            "identification_value": "1234",
             "room_condition_notes": "Nothing wrong, just reporting.",
             "raise_ticket": "on",
         },
